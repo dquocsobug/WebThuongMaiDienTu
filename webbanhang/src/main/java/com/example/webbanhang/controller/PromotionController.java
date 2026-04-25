@@ -1,10 +1,16 @@
 package com.example.webbanhang.controller;
 
+import com.example.webbanhang.dto.request.AssignProductPromotionRequest;
 import com.example.webbanhang.dto.request.PromotionRequest;
+import com.example.webbanhang.dto.response.ApiResponse;
+import com.example.webbanhang.dto.response.PageResponse;
 import com.example.webbanhang.dto.response.PromotionResponse;
 import com.example.webbanhang.service.PromotionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -12,94 +18,84 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/promotions")
+@RequestMapping("/promotions")
 @RequiredArgsConstructor
 public class PromotionController {
 
     private final PromotionService promotionService;
 
-    /**
-     * GET /api/promotions       - Public: tất cả khuyến mãi
-     */
-    @GetMapping
-    public ResponseEntity<ApiResponse<List<PromotionResponse>>> getAll() {
-        return ResponseEntity.ok(ApiResponse.success(promotionService.getAll()));
-    }
-
-    /**
-     * GET /api/promotions/active - Public: khuyến mãi đang hoạt động
-     */
+    // GET /api/promotions/active  — public
     @GetMapping("/active")
     public ResponseEntity<ApiResponse<List<PromotionResponse>>> getActive() {
-        return ResponseEntity.ok(ApiResponse.success(promotionService.getActive()));
+        return ResponseEntity.ok(ApiResponse.success(promotionService.getActivePromotions()));
     }
 
-    /**
-     * GET /api/promotions/product/{productId} - Public: khuyến mãi của sản phẩm
-     */
-    @GetMapping("/product/{productId}")
-    public ResponseEntity<ApiResponse<List<PromotionResponse>>> getByProduct(
-            @PathVariable Integer productId) {
-        return ResponseEntity.ok(ApiResponse.success(promotionService.getByProduct(productId)));
+    // GET /api/promotions/{promotionId}  — public
+    @GetMapping("/{promotionId}")
+    public ResponseEntity<ApiResponse<PromotionResponse>> getById(
+            @PathVariable Integer promotionId) {
+        return ResponseEntity.ok(ApiResponse.success(promotionService.getById(promotionId)));
     }
 
-    /**
-     * POST /api/promotions      - ADMIN: tạo khuyến mãi
-     * Body: { promotionName, discountPercent, startDate, endDate }
-     */
+    // ── Admin ─────────────────────────────────────────────────────────────────
+
+    // GET /api/promotions?keyword=&page=0&size=10
+    @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<PageResponse<PromotionResponse>>> getAll(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "0")  int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return ResponseEntity.ok(ApiResponse.success(promotionService.getAll(keyword, pageable)));
+    }
+
+    // POST /api/promotions
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<PromotionResponse>> create(
             @Valid @RequestBody PromotionRequest request) {
-        return ResponseEntity.ok(ApiResponse.success("Tạo khuyến mãi thành công",
-                promotionService.create(request)));
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Tạo khuyến mãi thành công",
+                        promotionService.create(request)));
     }
 
-    /**
-     * PUT /api/promotions/{id}  - ADMIN: cập nhật khuyến mãi
-     */
-    @PutMapping("/{id}")
+    // PUT /api/promotions/{promotionId}
+    @PutMapping("/{promotionId}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<PromotionResponse>> update(
-            @PathVariable Integer id,
+            @PathVariable Integer promotionId,
             @Valid @RequestBody PromotionRequest request) {
-        return ResponseEntity.ok(ApiResponse.success("Cập nhật thành công",
-                promotionService.update(id, request)));
+        return ResponseEntity.ok(ApiResponse.success("Cập nhật khuyến mãi thành công",
+                promotionService.update(promotionId, request)));
     }
 
-    /**
-     * DELETE /api/promotions/{id} - ADMIN: xóa khuyến mãi
-     */
-    @DeleteMapping("/{id}")
+    // DELETE /api/promotions/{promotionId}
+    @DeleteMapping("/{promotionId}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Integer id) {
-        promotionService.delete(id);
-        return ResponseEntity.ok(ApiResponse.success("Xóa khuyến mãi thành công", null));
+    public ResponseEntity<ApiResponse<Void>> delete(
+            @PathVariable Integer promotionId) {
+        promotionService.delete(promotionId);
+        return ResponseEntity.ok(ApiResponse.success("Xóa khuyến mãi thành công"));
     }
 
-    /**
-     * POST /api/promotions/{promotionId}/apply/{productId}
-     * ADMIN: áp dụng khuyến mãi cho sản phẩm
-     */
-    @PostMapping("/{promotionId}/apply/{productId}")
+    // POST /api/promotions/assign-products
+    @PostMapping("/assign-products")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<Void>> applyToProduct(
+    public ResponseEntity<ApiResponse<PromotionResponse>> assignProducts(
+            @Valid @RequestBody AssignProductPromotionRequest request) {
+        return ResponseEntity.ok(ApiResponse.success("Gán sản phẩm vào khuyến mãi thành công",
+                promotionService.assignProducts(request)));
+    }
+
+    // DELETE /api/promotions/{promotionId}/products/{productId}
+    @DeleteMapping("/{promotionId}/products/{productId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> removeProduct(
             @PathVariable Integer promotionId,
             @PathVariable Integer productId) {
-        promotionService.applyToProduct(productId, promotionId);
-        return ResponseEntity.ok(ApiResponse.success("Áp dụng khuyến mãi thành công", null));
-    }
-
-    /**
-     * DELETE /api/promotions/{promotionId}/remove/{productId}
-     * ADMIN: gỡ khuyến mãi khỏi sản phẩm
-     */
-    @DeleteMapping("/{promotionId}/remove/{productId}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<Void>> removeFromProduct(
-            @PathVariable Integer promotionId,
-            @PathVariable Integer productId) {
-        promotionService.removeFromProduct(productId, promotionId);
-        return ResponseEntity.ok(ApiResponse.success("Đã gỡ khuyến mãi khỏi sản phẩm", null));
+        promotionService.removeProduct(promotionId, productId);
+        return ResponseEntity.ok(ApiResponse.success("Gỡ sản phẩm khỏi khuyến mãi thành công"));
     }
 }

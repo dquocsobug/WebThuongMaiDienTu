@@ -1,78 +1,108 @@
 package com.example.webbanhang.controller;
 
-import com.example.webbanhang.config.SecurityUtils;
-import com.example.webbanhang.dto.response.OrderResponse;
+import com.example.webbanhang.dto.request.PlaceOrderRequest;
+import com.example.webbanhang.dto.request.UpdateOrderStatusRequest;
+import com.example.webbanhang.dto.response.*;
+import com.example.webbanhang.enums.OrderStatus;
+import com.example.webbanhang.security.SecurityUtil;
 import com.example.webbanhang.service.OrderService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.time.LocalDateTime;
 
 @RestController
-@RequestMapping("/api/orders")
+@RequestMapping("/orders")
 @RequiredArgsConstructor
 public class OrderController {
 
     private final OrderService orderService;
 
-    /**
-     * POST /api/orders        - Đặt hàng từ giỏ hàng hiện tại
-     */
+    // ── User ─────────────────────────────────────────────────────────────────
+
+    // POST /api/orders
     @PostMapping
-    public ResponseEntity<ApiResponse<OrderResponse>> placeOrder() {
-        Integer userId = SecurityUtils.getCurrentUserId();
-        return ResponseEntity.ok(ApiResponse.success("Đặt hàng thành công",
-                orderService.placeOrder(userId)));
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<OrderResponse>> placeOrder(
+            @Valid @RequestBody PlaceOrderRequest request) {
+        OrderResponse data = orderService.placeOrder(SecurityUtil.getCurrentUserId(), request);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Đặt hàng thành công", data));
     }
 
-    /**
-     * GET /api/orders/my      - User: xem lịch sử đơn hàng của mình
-     */
+    // GET /api/orders/my?page=0&size=10
     @GetMapping("/my")
-    public ResponseEntity<ApiResponse<List<OrderResponse>>> getMyOrders() {
-        Integer userId = SecurityUtils.getCurrentUserId();
-        return ResponseEntity.ok(ApiResponse.success(orderService.getByUser(userId)));
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<PageResponse<OrderSummaryResponse>>> getMyOrders(
+            @RequestParam(defaultValue = "0")  int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        return ResponseEntity.ok(ApiResponse.success(
+                orderService.getMyOrders(SecurityUtil.getCurrentUserId(), pageable)));
     }
 
-    /**
-     * GET /api/orders/{id}    - User xem đơn của mình / Admin xem bất kỳ
-     */
-    @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<OrderResponse>> getById(@PathVariable Integer id) {
-        OrderResponse order = orderService.getById(id);
-
-        // User chỉ được xem đơn của chính mình
-        if (!SecurityUtils.hasRole("ADMIN")) {
-            Integer userId = SecurityUtils.getCurrentUserId();
-            if (!order.getUserId().equals(userId)) {
-                throw new SecurityException("Bạn không có quyền xem đơn hàng này");
-            }
-        }
-
-        return ResponseEntity.ok(ApiResponse.success(order));
+    // GET /api/orders/my/{orderId}
+    @GetMapping("/my/{orderId}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<OrderResponse>> getMyOrderDetail(
+            @PathVariable Integer orderId) {
+        return ResponseEntity.ok(ApiResponse.success(
+                orderService.getOrderDetail(SecurityUtil.getCurrentUserId(), orderId)));
     }
 
-    /**
-     * GET /api/orders/all     - ADMIN: xem tất cả đơn hàng
-     */
-    @GetMapping("/all")
+    // PATCH /api/orders/my/{orderId}/cancel
+    @PatchMapping("/my/{orderId}/cancel")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<OrderResponse>> cancelOrder(
+            @PathVariable Integer orderId) {
+        return ResponseEntity.ok(ApiResponse.success("Huỷ đơn hàng thành công",
+                orderService.cancelOrder(SecurityUtil.getCurrentUserId(), orderId)));
+    }
+
+    // ── Admin ─────────────────────────────────────────────────────────────────
+
+    // GET /api/orders?userId=&status=&fromDate=&toDate=&page=0&size=10
+    @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<List<OrderResponse>>> getAll() {
-        return ResponseEntity.ok(ApiResponse.success(orderService.getAll()));
+    public ResponseEntity<ApiResponse<PageResponse<OrderSummaryResponse>>> getAllOrders(
+            @RequestParam(required = false) Integer     userId,
+            @RequestParam(required = false) OrderStatus status,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fromDate,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime toDate,
+            @RequestParam(defaultValue = "0")  int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        return ResponseEntity.ok(ApiResponse.success(
+                orderService.getAllOrders(userId, status, fromDate, toDate, pageable)));
     }
 
-    /**
-     * PUT /api/orders/{id}/status  - ADMIN: cập nhật trạng thái đơn hàng
-     * Body: { status } — Pending | Confirmed | Shipping | Completed | Cancelled
-     */
-    @PutMapping("/{id}/status")
+    // GET /api/orders/{orderId}
+    @GetMapping("/{orderId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<OrderResponse>> adminGetOrderDetail(
+            @PathVariable Integer orderId) {
+        return ResponseEntity.ok(ApiResponse.success(orderService.adminGetOrderDetail(orderId)));
+    }
+
+    // PATCH /api/orders/{orderId}/status
+    @PatchMapping("/{orderId}/status")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<OrderResponse>> updateStatus(
-            @PathVariable Integer id,
-            @RequestParam String status) {
-        return ResponseEntity.ok(ApiResponse.success("Cập nhật trạng thái thành công",
-                orderService.updateStatus(id, status)));
+            @PathVariable Integer orderId,
+            @Valid @RequestBody UpdateOrderStatusRequest request) {
+        return ResponseEntity.ok(ApiResponse.success("Cập nhật trạng thái đơn hàng thành công",
+                orderService.updateStatus(orderId, request)));
     }
 }

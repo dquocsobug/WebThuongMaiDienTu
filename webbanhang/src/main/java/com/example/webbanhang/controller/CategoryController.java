@@ -1,10 +1,12 @@
 package com.example.webbanhang.controller;
 
 import com.example.webbanhang.dto.request.CategoryRequest;
-import com.example.webbanhang.entity.Category;
+import com.example.webbanhang.dto.response.ApiResponse;
+import com.example.webbanhang.dto.response.CategoryResponse;
 import com.example.webbanhang.service.CategoryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -12,59 +14,51 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/categories")
+@RequestMapping("/categories")
 @RequiredArgsConstructor
 public class CategoryController {
 
     private final CategoryService categoryService;
 
-    /**
-     * GET /api/categories      - Public: danh sách danh mục
-     */
+    // GET /api/categories  — public
     @GetMapping
-    public ResponseEntity<ApiResponse<List<Category>>> getAll() {
+    public ResponseEntity<ApiResponse<List<CategoryResponse>>> getAll() {
         return ResponseEntity.ok(ApiResponse.success(categoryService.getAll()));
     }
 
-    /**
-     * GET /api/categories/{id} - Public: chi tiết danh mục
-     */
-    @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<Category>> getById(@PathVariable Integer id) {
-        return ResponseEntity.ok(ApiResponse.success(categoryService.getById(id)));
+    // GET /api/categories/{id}  — public
+    @GetMapping("/{categoryId}")
+    public ResponseEntity<ApiResponse<CategoryResponse>> getById(
+            @PathVariable Integer categoryId) {
+        return ResponseEntity.ok(ApiResponse.success(categoryService.getById(categoryId)));
     }
 
-    /**
-     * POST /api/categories     - ADMIN: tạo danh mục
-     * Body: { categoryName, description }
-     */
+    // POST /api/categories  — ADMIN
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<Category>> create(
+    public ResponseEntity<ApiResponse<CategoryResponse>> create(
             @Valid @RequestBody CategoryRequest request) {
-        return ResponseEntity.ok(ApiResponse.success("Tạo danh mục thành công",
-                categoryService.create(request)));
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Tạo danh mục thành công", categoryService.create(request)));
     }
 
-    /**
-     * PUT /api/categories/{id} - ADMIN: cập nhật danh mục
-     */
-    @PutMapping("/{id}")
+    // PUT /api/categories/{id}  — ADMIN
+    @PutMapping("/{categoryId}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<Category>> update(
-            @PathVariable Integer id,
+    public ResponseEntity<ApiResponse<CategoryResponse>> update(
+            @PathVariable Integer categoryId,
             @Valid @RequestBody CategoryRequest request) {
-        return ResponseEntity.ok(ApiResponse.success("Cập nhật thành công",
-                categoryService.update(id, request)));
+        return ResponseEntity.ok(ApiResponse.success("Cập nhật danh mục thành công",
+                categoryService.update(categoryId, request)));
     }
 
-    /**
-     * DELETE /api/categories/{id} - ADMIN: xóa danh mục
-     */
-    @DeleteMapping("/{id}")
+    // DELETE /api/categories/{id}  — ADMIN
+    @DeleteMapping("/{categoryId}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Integer id) {
-        categoryService.delete(id);
-        return ResponseEntity.ok(ApiResponse.success("Xóa danh mục thành công", null));
+    public ResponseEntity<ApiResponse<Void>> delete(
+            @PathVariable Integer categoryId) {
+        categoryService.delete(categoryId);
+        return ResponseEntity.ok(ApiResponse.success("Xóa danh mục thành công"));
     }
 }
