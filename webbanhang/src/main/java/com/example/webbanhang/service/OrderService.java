@@ -1,12 +1,39 @@
 package com.example.webbanhang.service;
 
+import com.example.webbanhang.dto.request.PlaceOrderRequest;
+import com.example.webbanhang.dto.request.UpdateOrderStatusRequest;
 import com.example.webbanhang.dto.response.OrderResponse;
-import java.util.List;
+import com.example.webbanhang.dto.response.OrderSummaryResponse;
+import com.example.webbanhang.dto.response.PageResponse;
+import com.example.webbanhang.enums.OrderStatus;
+import org.springframework.data.domain.Pageable;
+
+import java.time.LocalDateTime;
 
 public interface OrderService {
-    OrderResponse placeOrder(Integer userId);
-    OrderResponse getById(Integer orderId);
-    List<OrderResponse> getByUser(Integer userId);
-    List<OrderResponse> getAll();
-    OrderResponse updateStatus(Integer orderId, String status);
+
+    /** Đặt hàng từ giỏ hàng hiện tại. */
+    OrderResponse placeOrder(Integer userId, PlaceOrderRequest request);
+
+    /** Lấy danh sách đơn hàng của user đang đăng nhập. */
+    PageResponse<OrderSummaryResponse> getMyOrders(Integer userId, Pageable pageable);
+
+    /** Lấy chi tiết một đơn hàng (user chỉ xem đơn của mình). */
+    OrderResponse getOrderDetail(Integer userId, Integer orderId);
+
+    /** Huỷ đơn hàng — chỉ cho phép khi đơn đang PENDING. */
+    OrderResponse cancelOrder(Integer userId, Integer orderId);
+
+    /** [ADMIN] Lấy tất cả đơn hàng có filter. */
+    PageResponse<OrderSummaryResponse> getAllOrders(Integer userId,
+                                                    OrderStatus status,
+                                                    LocalDateTime fromDate,
+                                                    LocalDateTime toDate,
+                                                    Pageable pageable);
+
+    /** [ADMIN] Xem chi tiết bất kỳ đơn hàng nào. */
+    OrderResponse adminGetOrderDetail(Integer orderId);
+
+    /** [ADMIN] Cập nhật trạng thái đơn hàng. */
+    OrderResponse updateStatus(Integer orderId, UpdateOrderStatusRequest request);
 }
