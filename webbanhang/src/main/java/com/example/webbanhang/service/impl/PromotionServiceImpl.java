@@ -1,123 +1,190 @@
 package com.example.webbanhang.service.impl;
 
+import com.example.webbanhang.dto.request.AssignProductPromotionRequest;
 import com.example.webbanhang.dto.request.PromotionRequest;
+import com.example.webbanhang.dto.response.PageResponse;
+import com.example.webbanhang.dto.response.ProductSummaryResponse;
 import com.example.webbanhang.dto.response.PromotionResponse;
 import com.example.webbanhang.entity.Product;
+import com.example.webbanhang.entity.ProductImage;
 import com.example.webbanhang.entity.Promotion;
 import com.example.webbanhang.entity.ProductPromotion;
-import com.example.webbanhang.repository.ProductPromotionRepository;
-import com.example.webbanhang.repository.ProductRepository;
-import com.example.webbanhang.repository.PromotionRepository;
+import com.example.webbanhang.exception.BadRequestException;
+import com.example.webbanhang.exception.ConflictException;
+import com.example.webbanhang.exception.ResourceNotFoundException;
+import com.example.webbanhang.repository.*;
 import com.example.webbanhang.service.PromotionService;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PromotionServiceImpl implements PromotionService {
 
-    private final PromotionRepository promotionRepository;
-    private final ProductRepository productRepository;
+    private final PromotionRepository        promotionRepository;
     private final ProductPromotionRepository productPromotionRepository;
+    private final ProductRepository          productRepository;
+    private final ProductImageRepository     productImageRepository;
+
+    // ── Mapper ────────────────────────────────────────────────────────────────
+
+    private PromotionResponse toResponse(Promotion promotion) {
+        List<ProductSummaryResponse> products = productPromotionRepository
+                .findByPromotionPromotionId(promotion.getPromotionId())
+                .stream().map(pp -> {
+                    Product p = pp.getProduct();
+                    String mainImg = productImageRepository
+                            .findByProductProductIdAndIsMainTrue(p.getProductId())
+                            .map(ProductImage::getImageUrl).orElse(null);
+                    return ProductSummaryResponse.builder()
+                            .productId(p.getProductId())
+                            .productName(p.getProductName())
+                            .price(p.getPrice())
+                            .stock(p.getStock())
+                            .mainImageUrl(mainImg)
+                            .categoryName(p.getCategory().getCategoryName())
+                            .build();
+                }).toList();
+
+        return PromotionResponse.builder()
+                .promotionId(promotion.getPromotionId())
+                .promotionName(promotion.getPromotionName())
+                .discountPercent(promotion.getDiscountPercent())
+                .startDate(promotion.getStartDate())
+                .endDate(promotion.getEndDate())
+                .active(promotion.isActive())
+                .products(products)
+                .build();
+    }
+
+    private Promotion findById(Integer id) {
+        return promotionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Promotion", id));
+    }
+
+    // ── Public ────────────────────────────────────────────────────────────────
 
     @Override
+    @Transactional(readOnly = true)
+    public List<PromotionResponse> getActivePromotions() {
+        return promotionRepository.findActivePromotions(LocalDateTime.now())
+                .stream().map(this::toResponse).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PromotionResponse getById(Integer promotionId) {
+        return toResponse(findById(promotionId));
+    }
+
+    // ── Admin ─────────────────────────────────────────────────────────────────
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<PromotionResponse> getAll(String keyword, Pageable pageable) {
+        Page<Promotion> page = StringUtils.hasText(keyword)
+                ? promotionRepository.findByPromotionNameContainingIgnoreCase(keyword, pageable)
+                : promotionRepository.findAll(pageable);
+        List<PromotionResponse> content = page.getContent().stream()
+                .map(this::toResponse).toList();
+        return PageResponse.of(page, content);
+    }
+
+    @Override
+    @Transactional
     public PromotionResponse create(PromotionRequest request) {
-        if (request.getEndDate().isBefore(request.getStartDate())) {
-            throw new IllegalArgumentException("Ngày kết thúc phải sau ngày bắt đầu");
-        }
+        validateDates(request.getStartDate(), request.getEndDate());
+
         Promotion promotion = Promotion.builder()
                 .promotionName(request.getPromotionName())
                 .discountPercent(request.getDiscountPercent())
                 .startDate(request.getStartDate())
                 .endDate(request.getEndDate())
                 .build();
-        return toResponse(promotionRepository.save(promotion));
+
+        promotionRepository.save(promotion);
+        log.info("[Promotion] Tạo khuyến mãi: {}", promotion.getPromotionName());
+        return toResponse(promotion);
     }
 
     @Override
-    public PromotionResponse update(Integer id, PromotionRequest request) {
-        Promotion promotion = findOrThrow(id);
+    @Transactional
+    public PromotionResponse update(Integer promotionId, PromotionRequest request) {
+        Promotion promotion = findById(promotionId);
+        validateDates(request.getStartDate(), request.getEndDate());
+
         promotion.setPromotionName(request.getPromotionName());
         promotion.setDiscountPercent(request.getDiscountPercent());
         promotion.setStartDate(request.getStartDate());
         promotion.setEndDate(request.getEndDate());
+
         return toResponse(promotionRepository.save(promotion));
     }
 
     @Override
-    public void delete(Integer id) {
-        findOrThrow(id);
-        promotionRepository.deleteById(id);
-    }
-
-    @Override
-    public List<PromotionResponse> getAll() {
-        return promotionRepository.findAll().stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<PromotionResponse> getActive() {
-        return promotionRepository.findActivePromotions(LocalDateTime.now()).stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
-    }
-
-    @Override
     @Transactional
-    public void applyToProduct(Integer productId, Integer promotionId) {
-        if (productPromotionRepository.existsByProductProductIdAndPromotionPromotionId(productId, promotionId)) {
-            throw new IllegalArgumentException("Khuyến mãi đã được áp dụng cho sản phẩm này");
+    public void delete(Integer promotionId) {
+        if (!promotionRepository.existsById(promotionId)) {
+            throw new ResourceNotFoundException("Promotion", promotionId);
         }
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy sản phẩm"));
-        Promotion promotion = findOrThrow(promotionId);
-
-        ProductPromotion pp = ProductPromotion.builder()
-                .product(product)
-                .promotion(promotion)
-                .build();
-        productPromotionRepository.save(pp);
+        productPromotionRepository.deleteAllByPromotionId(promotionId);
+        promotionRepository.deleteById(promotionId);
+        log.info("[Promotion] Xóa khuyến mãi id={}", promotionId);
     }
 
     @Override
     @Transactional
-    public void removeFromProduct(Integer productId, Integer promotionId) {
-        productPromotionRepository.deleteByProductProductIdAndPromotionPromotionId(productId, promotionId);
+    public PromotionResponse assignProducts(AssignProductPromotionRequest request) {
+        Promotion promotion = findById(request.getPromotionId());
+
+        for (Integer productId : request.getProductIds()) {
+            if (!productRepository.existsById(productId)) {
+                throw new ResourceNotFoundException("Product", productId);
+            }
+            if (productPromotionRepository.existsByProductProductIdAndPromotionPromotionId(
+                    productId, promotion.getPromotionId())) {
+                log.warn("[Promotion] Sản phẩm {} đã có trong khuyến mãi {}, bỏ qua",
+                        productId, promotion.getPromotionId());
+                continue; // bỏ qua thay vì throw để xử lý bulk tốt hơn
+            }
+            Product product = productRepository.findById(productId).get();
+            ProductPromotion pp = ProductPromotion.builder()
+                    .product(product)
+                    .promotion(promotion)
+                    .build();
+            productPromotionRepository.save(pp);
+        }
+
+        return toResponse(promotion);
     }
 
     @Override
-    public List<PromotionResponse> getByProduct(Integer productId) {
-        return productPromotionRepository.findByProductProductId(productId).stream()
-                .map(pp -> toResponse(pp.getPromotion()))
-                .collect(Collectors.toList());
+    @Transactional
+    public void removeProduct(Integer promotionId, Integer productId) {
+        if (!promotionRepository.existsById(promotionId)) {
+            throw new ResourceNotFoundException("Promotion", promotionId);
+        }
+        if (!productPromotionRepository.existsByProductProductIdAndPromotionPromotionId(
+                productId, promotionId)) {
+            throw new BadRequestException("Sản phẩm không thuộc khuyến mãi này");
+        }
+        productPromotionRepository.deleteByProductIdAndPromotionId(productId, promotionId);
     }
 
-    // ── helpers ──────────────────────────────────────────────────────────────
+    // ── Validate ──────────────────────────────────────────────────────────────
 
-    private Promotion findOrThrow(Integer id) {
-        return promotionRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy khuyến mãi id: " + id));
-    }
-
-    private PromotionResponse toResponse(Promotion p) {
-        LocalDateTime now = LocalDateTime.now();
-        boolean active = p.getStartDate() != null && p.getEndDate() != null
-                && !now.isBefore(p.getStartDate()) && !now.isAfter(p.getEndDate());
-        return PromotionResponse.builder()
-                .promotionId(p.getPromotionId())
-                .promotionName(p.getPromotionName())
-                .discountPercent(p.getDiscountPercent())
-                .startDate(p.getStartDate())
-                .endDate(p.getEndDate())
-                .active(active)
-                .build();
+    private void validateDates(LocalDateTime startDate, LocalDateTime endDate) {
+        if (startDate != null && endDate != null && endDate.isBefore(startDate)) {
+            throw new BadRequestException("Ngày kết thúc phải sau ngày bắt đầu");
+        }
     }
 }

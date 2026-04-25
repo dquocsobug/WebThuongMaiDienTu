@@ -1,42 +1,91 @@
 package com.example.webbanhang.service.impl;
 
 import com.example.webbanhang.dto.request.CommentRequest;
+import com.example.webbanhang.dto.request.UpdateCommentRequest;
 import com.example.webbanhang.dto.response.CommentResponse;
+import com.example.webbanhang.dto.response.PageResponse;
+import com.example.webbanhang.dto.response.UserSummaryResponse;
 import com.example.webbanhang.entity.Comment;
-import com.example.webbanhang.entity.Product;
+import com.example.webbanhang.entity.Post;
 import com.example.webbanhang.entity.User;
+import com.example.webbanhang.enums.PostStatus;
+import com.example.webbanhang.exception.BadRequestException;
+import com.example.webbanhang.exception.ForbiddenException;
+import com.example.webbanhang.exception.ResourceNotFoundException;
 import com.example.webbanhang.repository.CommentRepository;
-import com.example.webbanhang.repository.ProductRepository;
+import com.example.webbanhang.repository.PostRepository;
 import com.example.webbanhang.repository.UserRepository;
 import com.example.webbanhang.service.CommentService;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class CommentServiceImpl implements CommentService {
 
     private final CommentRepository commentRepository;
-    private final UserRepository userRepository;
-    private final ProductRepository productRepository;
+    private final PostRepository    postRepository;
+    private final UserRepository    userRepository;
+
+    // ── Mapper ────────────────────────────────────────────────────────────────
+
+    private CommentResponse toResponse(Comment comment) {
+        User u = comment.getUser();
+        return CommentResponse.builder()
+                .commentId(comment.getCommentId())
+                .user(UserSummaryResponse.builder()
+                        .userId(u.getUserId())
+                        .fullName(u.getFullName())
+                        .email(u.getEmail())
+                        .build())
+                .postId(comment.getPost().getPostId())
+                .content(comment.getContent())
+                .createdAt(comment.getCreatedAt())
+                .build();
+    }
+
+    // ── Public ────────────────────────────────────────────────────────────────
 
     @Override
+    @Transactional(readOnly = true)
+    public PageResponse<CommentResponse> getByPost(Integer postId, Pageable pageable) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResourceNotFoundException("Post", postId));
+
+        if (post.getStatus() != PostStatus.PUBLISHED) {
+            throw new BadRequestException("Bài viết không tồn tại hoặc chưa được duyệt");
+        }
+
+        Page<Comment> page = commentRepository
+                .findByPostPostIdOrderByCreatedAtAsc(postId, pageable);
+        List<CommentResponse> content = page.getContent().stream()
+                .map(this::toResponse).toList();
+        return PageResponse.of(page, content);
+    }
+
+    // ── Authenticated ─────────────────────────────────────────────────────────
+
+    @Override
+    @Transactional
     public CommentResponse create(Integer userId, CommentRequest request) {
+        Post post = postRepository.findById(request.getPostId())
+                .orElseThrow(() -> new ResourceNotFoundException("Post", request.getPostId()));
+
+        if (post.getStatus() != PostStatus.PUBLISHED) {
+            throw new BadRequestException("Chỉ có thể bình luận bài viết đã được đăng");
+        }
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy user"));
-
-        Product product = productRepository.findById(request.getProductId())
-                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy sản phẩm"));
+                .orElseThrow(() -> new ResourceNotFoundException("User", userId));
 
         Comment comment = Comment.builder()
                 .user(user)
-                .product(product)
+                .post(post)
                 .content(request.getContent())
                 .build();
 
@@ -44,56 +93,28 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
-    public CommentResponse update(Integer userId, Integer commentId, String content) {
+    @Transactional
+    public CommentResponse update(Integer userId, Integer commentId, UpdateCommentRequest request) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Comment", commentId));
 
-        Comment comment = findOrThrow(commentId);
-        checkOwner(comment, userId);
+        if (!comment.getUser().getUserId().equals(userId)) {
+            throw new ForbiddenException("Bạn không có quyền sửa bình luận này");
+        }
 
-        comment.setContent(content);
-
+        comment.setContent(request.getContent());
         return toResponse(commentRepository.save(comment));
     }
 
     @Override
-    public void delete(Integer userId, Integer commentId) {
+    @Transactional
+    public void delete(Integer userId, Integer commentId, boolean isAdmin) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Comment", commentId));
 
-        Comment comment = findOrThrow(commentId);
-        checkOwner(comment, userId);
-
-        commentRepository.delete(comment);
-    }
-
-    @Transactional(readOnly = true)
-    @Override
-    public List<CommentResponse> getByProduct(Integer productId) {
-        return commentRepository.findByProductId(productId)
-                .stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
-    }
-
-    // ── helpers ──────────────────────────────────────────────────────────────
-
-    private Comment findOrThrow(Integer id) {
-        return commentRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException(
-                        "Không tìm thấy bình luận id: " + id));
-    }
-
-    private void checkOwner(Comment comment, Integer userId) {
-        if (!comment.getUser().getUserId().equals(userId)) {
-            throw new SecurityException("Bạn không có quyền thao tác bình luận này");
+        if (!isAdmin && !comment.getUser().getUserId().equals(userId)) {
+            throw new ForbiddenException("Bạn không có quyền xóa bình luận này");
         }
-    }
-
-    private CommentResponse toResponse(Comment c) {
-        return CommentResponse.builder()
-                .commentId(c.getCommentId())
-                .userId(c.getUser().getUserId())
-                .userFullName(c.getUser().getFullName())
-                .productId(c.getProduct().getProductId())
-                .content(c.getContent())
-                .createdAt(c.getCreatedAt())
-                .build();
+        commentRepository.delete(comment);
     }
 }
