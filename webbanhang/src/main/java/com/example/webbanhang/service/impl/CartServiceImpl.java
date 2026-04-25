@@ -1,6 +1,5 @@
 package com.example.webbanhang.service.impl;
 
-import com.example.webbanhang.dto.request.CartItemRequest;
 import com.example.webbanhang.dto.response.CartResponse;
 import com.example.webbanhang.entity.*;
 import com.example.webbanhang.repository.*;

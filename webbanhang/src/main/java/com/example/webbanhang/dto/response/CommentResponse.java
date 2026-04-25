@@ -1,14 +1,17 @@
 package com.example.webbanhang.dto.response;
 
-import lombok.*;
+import lombok.Builder;
+import lombok.Getter;
+
 import java.time.LocalDateTime;
 
-@Data @AllArgsConstructor @NoArgsConstructor @Builder
+@Getter
+@Builder
 public class CommentResponse {
-    private Integer commentId;
-    private Integer userId;
-    private String userFullName;
-    private Integer productId;
-    private String content;
-    private LocalDateTime createdAt;
+
+    private final Integer             commentId;
+    private final UserSummaryResponse user;
+    private final Integer             postId;
+    private final String              content;
+    private final LocalDateTime       createdAt;
 }

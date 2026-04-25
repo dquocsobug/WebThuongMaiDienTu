@@ -1,7 +1,6 @@
 package com.example.webbanhang.controller;
 
 import com.example.webbanhang.dto.request.ProductRequest;
-import com.example.webbanhang.dto.response.ApiResponse;
 import com.example.webbanhang.dto.response.ProductResponse;
 import com.example.webbanhang.service.ProductService;
 import jakarta.validation.Valid;

@@ -1,15 +1,27 @@
 package com.example.webbanhang.dto.response;
 
-import lombok.*;
-import java.time.LocalDateTime;
+import com.example.webbanhang.enums.PostStatus;
+import lombok.Builder;
+import lombok.Getter;
 
-@Data @AllArgsConstructor @NoArgsConstructor @Builder
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Getter
+@Builder
 public class PostResponse {
-    private Integer postId;
-    private String title;
-    private String content;
-    private String imageUrl;
-    private Integer createdById;
-    private String createdByName;
-    private LocalDateTime createdAt;
+
+    private final Integer                  postId;
+    private final String                   title;
+    private final String                   content;
+    private final String                   summary;
+    private final PostStatus               status;
+    private final String                   rejectionReason; // Hiển thị khi REJECTED
+    private final UserSummaryResponse      author;
+    private final List<PostImageResponse>  images;
+    private final String                   mainImageUrl;    // Shortcut ảnh chính
+    private final List<PostProductResponse> products;       // Sản phẩm gắn trong bài
+    private final long                     commentCount;
+    private final LocalDateTime            createdAt;
+    private final LocalDateTime            publishedAt;
 }

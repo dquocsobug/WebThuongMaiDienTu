@@ -1,7 +1,6 @@
 package com.example.webbanhang.controller;
 
 import com.example.webbanhang.dto.request.CategoryRequest;
-import com.example.webbanhang.dto.response.ApiResponse;
 import com.example.webbanhang.entity.Category;
 import com.example.webbanhang.service.CategoryService;
 import jakarta.validation.Valid;

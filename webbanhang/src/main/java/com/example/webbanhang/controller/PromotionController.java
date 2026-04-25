@@ -1,7 +1,6 @@
 package com.example.webbanhang.controller;
 
 import com.example.webbanhang.dto.request.PromotionRequest;
-import com.example.webbanhang.dto.response.ApiResponse;
 import com.example.webbanhang.dto.response.PromotionResponse;
 import com.example.webbanhang.service.PromotionService;
 import jakarta.validation.Valid;

@@ -1,6 +1,5 @@
 package com.example.webbanhang.service;
 
-import com.example.webbanhang.dto.request.CartItemRequest;
 import com.example.webbanhang.dto.response.CartResponse;
 
 public interface CartService {

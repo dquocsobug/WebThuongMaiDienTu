@@ -1,15 +1,20 @@
 package com.example.webbanhang.dto.response;
 
-import lombok.*;
+import com.example.webbanhang.enums.Role;
+import lombok.Builder;
+import lombok.Getter;
+
 import java.time.LocalDateTime;
 
-@Data @AllArgsConstructor @NoArgsConstructor @Builder
+@Getter
+@Builder
 public class UserResponse {
-    private Integer userId;
-    private String fullName;
-    private String email;
-    private String phone;
-    private String address;
-    private String role;
-    private LocalDateTime createdAt;
+
+    private final Integer       userId;
+    private final String        fullName;
+    private final String        email;
+    private final String        phone;
+    private final String        address;
+    private final Role          role;
+    private final LocalDateTime createdAt;
 }

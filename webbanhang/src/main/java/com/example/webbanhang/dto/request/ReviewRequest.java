@@ -1,16 +1,19 @@
 package com.example.webbanhang.dto.request;
 
 import jakarta.validation.constraints.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
 public class ReviewRequest {
-    @NotNull
+
+    @NotNull(message = "ProductId không được để trống")
     private Integer productId;
 
-    @NotNull(message = "Điểm đánh giá không được để trống")
-    @Min(value = 1, message = "Điểm tối thiểu là 1")
-    @Max(value = 5, message = "Điểm tối đa là 5")
+    @NotNull(message = "Số sao không được để trống")
+    @Min(value = 1, message = "Số sao tối thiểu là 1")
+    @Max(value = 5, message = "Số sao tối đa là 5")
     private Integer rating;
 
     private String comment;

@@ -1,24 +1,18 @@
 package com.example.webbanhang.dto.response;
 
-import lombok.*;
+import lombok.Builder;
+import lombok.Getter;
+
 import java.math.BigDecimal;
 import java.util.List;
 
-@Data @AllArgsConstructor @NoArgsConstructor @Builder
+@Getter
+@Builder
 public class CartResponse {
-    private Integer cartId;
-    private Integer userId;
-    private List<CartItemResponse> items;
-    private BigDecimal totalPrice;
 
-    @Data @AllArgsConstructor @NoArgsConstructor @Builder
-    public static class CartItemResponse {
-        private Integer cartItemId;
-        private Integer productId;
-        private String productName;
-        private String imageUrl;
-        private BigDecimal price;
-        private Integer quantity;
-        private BigDecimal subtotal;
-    }
+    private final Integer             cartId;
+    private final Integer             userId;
+    private final List<CartItemResponse> items;
+    private final int                 totalItems;   // Tổng số loại sản phẩm
+    private final BigDecimal          totalAmount;  // Tổng tiền giỏ hàng
 }

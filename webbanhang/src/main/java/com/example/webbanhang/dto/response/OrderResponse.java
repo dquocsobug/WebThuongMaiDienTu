@@ -1,28 +1,28 @@
 package com.example.webbanhang.dto.response;
 
-import lombok.*;
+import com.example.webbanhang.enums.OrderStatus;
+import com.example.webbanhang.enums.PaymentStatus;
+import lombok.Builder;
+import lombok.Getter;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Data @AllArgsConstructor @NoArgsConstructor @Builder
+@Getter
+@Builder
 public class OrderResponse {
-    private Integer orderId;
-    private Integer userId;
-    private String userFullName;
-    private BigDecimal totalAmount;
-    private String status;
-    private LocalDateTime createdAt;
-    private List<OrderDetailResponse> details;
 
-    @Data @AllArgsConstructor @NoArgsConstructor @Builder
-    public static class OrderDetailResponse {
-        private Integer orderDetailId;
-        private Integer productId;
-        private String productName;
-        private String imageUrl;
-        private Integer quantity;
-        private BigDecimal price;
-        private BigDecimal subtotal;
-    }
+    private final Integer                  orderId;
+    private final UserSummaryResponse      user;
+    private final List<OrderDetailResponse> orderDetails;
+    private final BigDecimal               totalAmount;
+    private final OrderStatus              status;
+    private final String                   receiverName;
+    private final String                   receiverPhone;
+    private final String                   shippingAddress;
+    private final String                   paymentMethod;
+    private final PaymentStatus            paymentStatus;
+    private final String                   note;
+    private final LocalDateTime            createdAt;
 }

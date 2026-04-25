@@ -1,6 +1,5 @@
 package com.example.webbanhang.service.impl;
 
-import com.example.webbanhang.dto.request.UpdateUserRequest;
 import com.example.webbanhang.dto.response.UserResponse;
 import com.example.webbanhang.entity.User;
 import com.example.webbanhang.repository.UserRepository;

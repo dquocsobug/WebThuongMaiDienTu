@@ -1,8 +1,6 @@
 package com.example.webbanhang.controller;
 
 import com.example.webbanhang.config.SecurityUtils;
-import com.example.webbanhang.dto.request.CartItemRequest;
-import com.example.webbanhang.dto.response.ApiResponse;
 import com.example.webbanhang.dto.response.CartResponse;
 import com.example.webbanhang.service.CartService;
 import jakarta.validation.Valid;

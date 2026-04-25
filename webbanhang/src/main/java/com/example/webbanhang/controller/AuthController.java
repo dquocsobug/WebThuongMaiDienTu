@@ -2,7 +2,6 @@ package com.example.webbanhang.controller;
 
 import com.example.webbanhang.dto.request.LoginRequest;
 import com.example.webbanhang.dto.request.RegisterRequest;
-import com.example.webbanhang.dto.response.ApiResponse;
 import com.example.webbanhang.dto.response.AuthResponse;
 import com.example.webbanhang.service.AuthService;
 import jakarta.validation.Valid;

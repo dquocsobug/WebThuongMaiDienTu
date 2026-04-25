@@ -1,8 +1,6 @@
 package com.example.webbanhang.controller;
 
 import com.example.webbanhang.config.SecurityUtils;
-import com.example.webbanhang.dto.request.UpdateUserRequest;
-import com.example.webbanhang.dto.response.ApiResponse;
 import com.example.webbanhang.dto.response.UserResponse;
 import com.example.webbanhang.service.UserService;
 import lombok.RequiredArgsConstructor;
