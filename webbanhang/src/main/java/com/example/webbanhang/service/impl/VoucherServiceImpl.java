@@ -2,11 +2,13 @@ package com.example.webbanhang.service.impl;
 
 import com.example.webbanhang.dto.request.AssignVoucherRequest;
 import com.example.webbanhang.dto.request.VoucherRequest;
-import com.example.webbanhang.dto.response.*;
+import com.example.webbanhang.dto.response.ApplyVoucherResponse;
+import com.example.webbanhang.dto.response.PageResponse;
+import com.example.webbanhang.dto.response.UserVoucherResponse;
+import com.example.webbanhang.dto.response.VoucherResponse;
 import com.example.webbanhang.entity.User;
 import com.example.webbanhang.entity.UserVoucher;
 import com.example.webbanhang.entity.Voucher;
-import com.example.webbanhang.enums.VoucherType;
 import com.example.webbanhang.exception.BadRequestException;
 import com.example.webbanhang.exception.ConflictException;
 import com.example.webbanhang.exception.ResourceNotFoundException;
@@ -32,35 +34,31 @@ import java.util.List;
 @RequiredArgsConstructor
 public class VoucherServiceImpl implements VoucherService {
 
-    private final VoucherRepository     voucherRepository;
+    private final VoucherRepository voucherRepository;
     private final UserVoucherRepository userVoucherRepository;
-    private final UserRepository        userRepository;
-
-    // ── Mapper ────────────────────────────────────────────────────────────────
+    private final UserRepository userRepository;
 
     private VoucherResponse toVoucherResponse(Voucher v) {
         return VoucherResponse.builder()
                 .voucherId(v.getVoucherId())
-                .code(v.getCode())
+                .voucherCode(v.getVoucherCode())
                 .voucherName(v.getVoucherName())
-                .voucherType(v.getVoucherType())
-                .discountValue(v.getDiscountValue())
-                .maxDiscount(v.getMaxDiscount())
-                .minOrderAmount(v.getMinOrderAmount())
-                .usageLimit(v.getUsageLimit())
-                .usedCount(v.getUsedCount())
+                .discountPercent(v.getDiscountPercent())
+                .discountAmount(v.getDiscountAmount())
+                .minOrderValue(v.getMinOrderValue())
+                .targetRole(v.getTargetRole())
+                .quantity(v.getQuantity())
                 .startDate(v.getStartDate())
                 .endDate(v.getEndDate())
                 .isActive(v.getIsActive())
-                .isLoyalOnly(v.getIsLoyalOnly())
-                .valid(v.isValid())
                 .createdAt(v.getCreatedAt())
+                .valid(isValid(v))
                 .build();
     }
 
     private UserVoucherResponse toUserVoucherResponse(UserVoucher uv) {
         return UserVoucherResponse.builder()
-                .id(uv.getId())
+                .userVoucherId(uv.getUserVoucherId())
                 .voucher(toVoucherResponse(uv.getVoucher()))
                 .isUsed(uv.getIsUsed())
                 .usedAt(uv.getUsedAt())
@@ -68,22 +66,62 @@ public class VoucherServiceImpl implements VoucherService {
                 .build();
     }
 
-    // ── Internal helpers ──────────────────────────────────────────────────────
+    private Voucher findVoucherByCode(String voucherCode) {
+        String code = voucherCode.trim().toUpperCase();
 
-    private Voucher findVoucherByCode(String code) {
-        return voucherRepository.findByCode(code)
-                .orElseThrow(() -> new ResourceNotFoundException("Voucher", "code", code));
+        return voucherRepository.findByVoucherCode(code)
+                .orElseThrow(() -> new ResourceNotFoundException("Voucher", "voucherCode", code));
+    }
+
+    private boolean isValid(Voucher voucher) {
+        LocalDateTime now = LocalDateTime.now();
+
+        if (!Boolean.TRUE.equals(voucher.getIsActive())) {
+            return false;
+        }
+
+        if (voucher.getQuantity() != null && voucher.getQuantity() <= 0) {
+            return false;
+        }
+
+        if (voucher.getStartDate() != null && now.isBefore(voucher.getStartDate())) {
+            return false;
+        }
+
+        if (voucher.getEndDate() != null && now.isAfter(voucher.getEndDate())) {
+            return false;
+        }
+
+        return true;
     }
 
     private void validateVoucherUsable(Integer userId, Voucher voucher, BigDecimal orderAmount) {
-        if (!voucher.isValid()) {
-            throw new BadRequestException("Voucher '" + voucher.getCode() + "' không còn hiệu lực");
+        if (!isValid(voucher)) {
+            throw new BadRequestException("Voucher '" + voucher.getVoucherCode() + "' không còn hiệu lực");
         }
-        if (orderAmount.compareTo(voucher.getMinOrderAmount()) < 0) {
-            throw new BadRequestException(
-                    "Đơn hàng tối thiểu " + voucher.getMinOrderAmount() + " để dùng voucher này");
+
+        if (orderAmount == null || orderAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BadRequestException("Tổng tiền đơn hàng không hợp lệ");
         }
-        // Kiểm tra user có voucher này và chưa dùng
+
+        BigDecimal minOrderValue = voucher.getMinOrderValue() != null
+                ? voucher.getMinOrderValue()
+                : BigDecimal.ZERO;
+
+        if (orderAmount.compareTo(minOrderValue) < 0) {
+            throw new BadRequestException("Đơn hàng tối thiểu " + minOrderValue + " để dùng voucher này");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", userId));
+
+        String targetRole = voucher.getTargetRole();
+
+        if (StringUtils.hasText(targetRole)
+                && !targetRole.equalsIgnoreCase(user.getRole().name())) {
+            throw new BadRequestException("Voucher này không áp dụng cho tài khoản của bạn");
+        }
+
         UserVoucher uv = userVoucherRepository
                 .findByUserUserIdAndVoucherVoucherId(userId, voucher.getVoucherId())
                 .orElseThrow(() -> new BadRequestException("Bạn không có voucher này"));
@@ -93,20 +131,20 @@ public class VoucherServiceImpl implements VoucherService {
         }
     }
 
-    // ── User ─────────────────────────────────────────────────────────────────
-
     @Override
     @Transactional(readOnly = true)
     public List<UserVoucherResponse> getMyVouchers(Integer userId) {
-        return userVoucherRepository.findUnusedValidVouchersByUserId(userId)
-                .stream().map(this::toUserVoucherResponse).toList();
+        return userVoucherRepository.findByUserUserIdOrderByAssignedAtDesc(userId)
+                .stream()
+                .filter(uv -> !Boolean.TRUE.equals(uv.getIsUsed()))
+                .filter(uv -> isValid(uv.getVoucher()))
+                .map(this::toUserVoucherResponse)
+                .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public ApplyVoucherResponse previewVoucher(Integer userId,
-                                               String voucherCode,
-                                               BigDecimal orderAmount) {
+    public ApplyVoucherResponse previewVoucher(Integer userId, String voucherCode, BigDecimal orderAmount) {
         Voucher voucher = findVoucherByCode(voucherCode);
         validateVoucherUsable(userId, voucher, orderAmount);
 
@@ -114,7 +152,7 @@ public class VoucherServiceImpl implements VoucherService {
         BigDecimal finalAmount = orderAmount.subtract(discount).max(BigDecimal.ZERO);
 
         return ApplyVoucherResponse.builder()
-                .voucherCode(voucher.getCode())
+                .voucherCode(voucher.getVoucherCode())
                 .voucherName(voucher.getVoucherName())
                 .originalAmount(orderAmount)
                 .discountAmount(discount)
@@ -122,10 +160,8 @@ public class VoucherServiceImpl implements VoucherService {
                 .build();
     }
 
-    // ── Internal ─────────────────────────────────────────────────────────────
-
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public BigDecimal calculateDiscount(Integer userId, String voucherCode, BigDecimal orderAmount) {
         Voucher voucher = findVoucherByCode(voucherCode);
         validateVoucherUsable(userId, voucher, orderAmount);
@@ -136,44 +172,57 @@ public class VoucherServiceImpl implements VoucherService {
     @Transactional
     public void markVoucherUsed(Integer userId, String voucherCode) {
         Voucher voucher = findVoucherByCode(voucherCode);
-        int updated = userVoucherRepository.markAsUsed(userId, voucher.getVoucherId());
-        if (updated == 0) {
-            throw new BadRequestException("Không thể đánh dấu voucher đã dùng");
+
+        UserVoucher userVoucher = userVoucherRepository
+                .findByUserUserIdAndVoucherVoucherId(userId, voucher.getVoucherId())
+                .orElseThrow(() -> new BadRequestException("Bạn không có voucher này"));
+
+        if (Boolean.TRUE.equals(userVoucher.getIsUsed())) {
+            throw new BadRequestException("Voucher này đã được sử dụng");
         }
-        voucherRepository.incrementUsedCount(voucher.getVoucherId());
+
+        userVoucher.setIsUsed(true);
+        userVoucher.setUsedAt(LocalDateTime.now());
+        userVoucherRepository.save(userVoucher);
+
+        if (voucher.getQuantity() != null && voucher.getQuantity() > 0) {
+            voucher.setQuantity(voucher.getQuantity() - 1);
+            voucherRepository.save(voucher);
+        }
+
         log.info("[Voucher] User {} dùng voucher {}", userId, voucherCode);
     }
 
     private BigDecimal computeDiscount(Voucher voucher, BigDecimal orderAmount) {
-        if (voucher.getVoucherType() == VoucherType.FIXED) {
-            // Giảm cố định, không vượt quá tổng đơn
-            return voucher.getDiscountValue().min(orderAmount);
-        } else {
-            // Giảm theo %
-            BigDecimal discount = orderAmount
-                    .multiply(voucher.getDiscountValue())
-                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-            // Áp trần maxDiscount nếu có
-            if (voucher.getMaxDiscount() != null) {
-                discount = discount.min(voucher.getMaxDiscount());
-            }
-            return discount;
-        }
-    }
+        BigDecimal discount = BigDecimal.ZERO;
 
-    // ── Admin ─────────────────────────────────────────────────────────────────
+        if (voucher.getDiscountPercent() != null) {
+            discount = orderAmount
+                    .multiply(BigDecimal.valueOf(voucher.getDiscountPercent()))
+                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        }
+
+        if (voucher.getDiscountAmount() != null) {
+            discount = voucher.getDiscountAmount();
+        }
+
+        return discount.min(orderAmount);
+    }
 
     @Override
     @Transactional(readOnly = true)
     public PageResponse<VoucherResponse> getAll(String keyword, Boolean isActive, Pageable pageable) {
         Page<Voucher> page = voucherRepository.findWithFilters(
                 StringUtils.hasText(keyword) ? keyword : null,
-                null,
                 isActive,
-                null,
-                pageable);
-        List<VoucherResponse> content = page.getContent().stream()
-                .map(this::toVoucherResponse).toList();
+                pageable
+        );
+
+        List<VoucherResponse> content = page.getContent()
+                .stream()
+                .map(this::toVoucherResponse)
+                .toList();
+
         return PageResponse.of(page, content);
     }
 
@@ -182,34 +231,38 @@ public class VoucherServiceImpl implements VoucherService {
     public VoucherResponse getById(Integer voucherId) {
         Voucher voucher = voucherRepository.findById(voucherId)
                 .orElseThrow(() -> new ResourceNotFoundException("Voucher", voucherId));
+
         return toVoucherResponse(voucher);
     }
 
     @Override
     @Transactional
     public VoucherResponse create(VoucherRequest request) {
-        if (voucherRepository.existsByCode(request.getCode())) {
-            throw new ConflictException("Mã voucher '" + request.getCode() + "' đã tồn tại");
+        String code = request.getVoucherCode().trim().toUpperCase();
+
+        if (voucherRepository.existsByVoucherCode(code)) {
+            throw new ConflictException("Mã voucher '" + code + "' đã tồn tại");
         }
+
         validateVoucherRequest(request);
 
         Voucher voucher = Voucher.builder()
-                .code(request.getCode().toUpperCase())
+                .voucherCode(code)
                 .voucherName(request.getVoucherName())
-                .voucherType(request.getVoucherType())
-                .discountValue(request.getDiscountValue())
-                .maxDiscount(request.getMaxDiscount())
-                .minOrderAmount(request.getMinOrderAmount() != null
-                        ? request.getMinOrderAmount() : BigDecimal.ZERO)
-                .usageLimit(request.getUsageLimit())
+                .discountPercent(request.getDiscountPercent())
+                .discountAmount(request.getDiscountAmount())
+                .minOrderValue(request.getMinOrderValue() != null ? request.getMinOrderValue() : BigDecimal.ZERO)
+                .targetRole(request.getTargetRole() != null ? request.getTargetRole() : "LOYAL_CUSTOMER")
+                .quantity(request.getQuantity() != null ? request.getQuantity() : 0)
                 .startDate(request.getStartDate())
                 .endDate(request.getEndDate())
                 .isActive(request.getIsActive() != null ? request.getIsActive() : true)
-                .isLoyalOnly(request.getIsLoyalOnly() != null ? request.getIsLoyalOnly() : false)
                 .build();
 
         voucherRepository.save(voucher);
-        log.info("[Voucher] Tạo voucher: {}", voucher.getCode());
+
+        log.info("[Voucher] Tạo voucher: {}", voucher.getVoucherCode());
+
         return toVoucherResponse(voucher);
     }
 
@@ -219,25 +272,28 @@ public class VoucherServiceImpl implements VoucherService {
         Voucher voucher = voucherRepository.findById(voucherId)
                 .orElseThrow(() -> new ResourceNotFoundException("Voucher", voucherId));
 
-        // Nếu đổi code, kiểm tra trùng
-        if (!voucher.getCode().equalsIgnoreCase(request.getCode())
-                && voucherRepository.existsByCode(request.getCode())) {
-            throw new ConflictException("Mã voucher '" + request.getCode() + "' đã tồn tại");
+        String code = request.getVoucherCode().trim().toUpperCase();
+
+        if (!voucher.getVoucherCode().equalsIgnoreCase(code)
+                && voucherRepository.existsByVoucherCode(code)) {
+            throw new ConflictException("Mã voucher '" + code + "' đã tồn tại");
         }
+
         validateVoucherRequest(request);
 
-        voucher.setCode(request.getCode().toUpperCase());
+        voucher.setVoucherCode(code);
         voucher.setVoucherName(request.getVoucherName());
-        voucher.setVoucherType(request.getVoucherType());
-        voucher.setDiscountValue(request.getDiscountValue());
-        voucher.setMaxDiscount(request.getMaxDiscount());
-        voucher.setMinOrderAmount(request.getMinOrderAmount() != null
-                ? request.getMinOrderAmount() : BigDecimal.ZERO);
-        voucher.setUsageLimit(request.getUsageLimit());
+        voucher.setDiscountPercent(request.getDiscountPercent());
+        voucher.setDiscountAmount(request.getDiscountAmount());
+        voucher.setMinOrderValue(request.getMinOrderValue() != null ? request.getMinOrderValue() : BigDecimal.ZERO);
+        voucher.setTargetRole(request.getTargetRole() != null ? request.getTargetRole() : "LOYAL_CUSTOMER");
+        voucher.setQuantity(request.getQuantity() != null ? request.getQuantity() : 0);
         voucher.setStartDate(request.getStartDate());
         voucher.setEndDate(request.getEndDate());
-        if (request.getIsActive() != null) voucher.setIsActive(request.getIsActive());
-        if (request.getIsLoyalOnly() != null) voucher.setIsLoyalOnly(request.getIsLoyalOnly());
+
+        if (request.getIsActive() != null) {
+            voucher.setIsActive(request.getIsActive());
+        }
 
         return toVoucherResponse(voucherRepository.save(voucher));
     }
@@ -248,8 +304,10 @@ public class VoucherServiceImpl implements VoucherService {
         if (!voucherRepository.existsById(voucherId)) {
             throw new ResourceNotFoundException("Voucher", voucherId);
         }
-        userVoucherRepository.deleteAllByUserId(voucherId); // xóa liên kết user
+
+        userVoucherRepository.deleteAllByVoucherId(voucherId);
         voucherRepository.deleteById(voucherId);
+
         log.info("[Voucher] Xóa voucher id={}", voucherId);
     }
 
@@ -263,9 +321,19 @@ public class VoucherServiceImpl implements VoucherService {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new ResourceNotFoundException("User", userId));
 
-            if (userVoucherRepository.existsByUserUserIdAndVoucherVoucherId(
-                    userId, voucher.getVoucherId())) {
-                log.warn("[Voucher] User {} đã có voucher {}, bỏ qua", userId, voucher.getCode());
+            if (StringUtils.hasText(voucher.getTargetRole())
+                    && !voucher.getTargetRole().equalsIgnoreCase(user.getRole().name())) {
+                log.warn("[Voucher] User {} không đúng role {}, bỏ qua", userId, voucher.getTargetRole());
+                continue;
+            }
+
+            boolean existed = userVoucherRepository.existsByUserUserIdAndVoucherVoucherId(
+                    userId,
+                    voucher.getVoucherId()
+            );
+
+            if (existed) {
+                log.warn("[Voucher] User {} đã có voucher {}, bỏ qua", userId, voucher.getVoucherCode());
                 continue;
             }
 
@@ -274,8 +342,10 @@ public class VoucherServiceImpl implements VoucherService {
                     .voucher(voucher)
                     .isUsed(false)
                     .build();
+
             userVoucherRepository.save(uv);
-            log.info("[Voucher] Cấp voucher {} cho user {}", voucher.getCode(), userId);
+
+            log.info("[Voucher] Cấp voucher {} cho user {}", voucher.getVoucherCode(), userId);
         }
     }
 
@@ -285,23 +355,54 @@ public class VoucherServiceImpl implements VoucherService {
         if (!voucherRepository.existsById(voucherId)) {
             throw new ResourceNotFoundException("Voucher", voucherId);
         }
+
         Page<UserVoucher> page = userVoucherRepository
                 .findByVoucherVoucherIdOrderByAssignedAtDesc(voucherId, pageable);
-        List<UserVoucherResponse> content = page.getContent().stream()
-                .map(this::toUserVoucherResponse).toList();
+
+        List<UserVoucherResponse> content = page.getContent()
+                .stream()
+                .map(this::toUserVoucherResponse)
+                .toList();
+
         return PageResponse.of(page, content);
     }
 
-    // ── Validate ──────────────────────────────────────────────────────────────
-
     private void validateVoucherRequest(VoucherRequest request) {
-        if (request.getStartDate() != null && request.getEndDate() != null
+        boolean hasPercent = request.getDiscountPercent() != null;
+        boolean hasAmount = request.getDiscountAmount() != null;
+
+        if (hasPercent == hasAmount) {
+            throw new BadRequestException("Chỉ được nhập DiscountPercent hoặc DiscountAmount, không được nhập cả hai");
+        }
+
+        if (hasPercent && (request.getDiscountPercent() < 0 || request.getDiscountPercent() > 100)) {
+            throw new BadRequestException("Phần trăm giảm phải từ 0 đến 100");
+        }
+
+        if (hasAmount && request.getDiscountAmount().compareTo(BigDecimal.ZERO) < 0) {
+            throw new BadRequestException("Số tiền giảm không được âm");
+        }
+
+        if (request.getMinOrderValue() != null
+                && request.getMinOrderValue().compareTo(BigDecimal.ZERO) < 0) {
+            throw new BadRequestException("Giá trị đơn hàng tối thiểu không được âm");
+        }
+
+        if (request.getQuantity() != null && request.getQuantity() < 0) {
+            throw new BadRequestException("Số lượng voucher không được âm");
+        }
+
+        if (request.getStartDate() != null
+                && request.getEndDate() != null
                 && request.getEndDate().isBefore(request.getStartDate())) {
             throw new BadRequestException("Ngày kết thúc phải sau ngày bắt đầu");
         }
-        if (request.getVoucherType() == VoucherType.PERCENT) {
-            if (request.getDiscountValue().compareTo(BigDecimal.valueOf(100)) > 0) {
-                throw new BadRequestException("Phần trăm giảm tối đa là 100%");
+
+        if (StringUtils.hasText(request.getTargetRole())) {
+            String role = request.getTargetRole();
+
+            if (!role.equals("CUSTOMER") && !role.equals("LOYAL_CUSTOMER")) {
+                throw new BadRequestException("TargetRole chỉ được là CUSTOMER hoặc LOYAL_CUSTOMER");
             }
         }
     }

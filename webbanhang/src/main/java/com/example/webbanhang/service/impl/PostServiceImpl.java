@@ -29,20 +29,20 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PostServiceImpl implements PostService {
 
-    private final PostRepository         postRepository;
-    private final PostImageRepository    postImageRepository;
-    private final PostProductRepository  postProductRepository;
-    private final ProductRepository      productRepository;
+    private final PostRepository postRepository;
+    private final PostImageRepository postImageRepository;
+    private final PostProductRepository postProductRepository;
+    private final ProductRepository productRepository;
     private final ProductImageRepository productImageRepository;
-    private final CommentRepository      commentRepository;
-    private final UserRepository         userRepository;
-
-    // ── Mapper ────────────────────────────────────────────────────────────────
+    private final CommentRepository commentRepository;
+    private final UserRepository userRepository;
 
     private PostSummaryResponse toSummaryResponse(Post post) {
         String mainImg = postImageRepository
                 .findByPostPostIdAndIsMainTrue(post.getPostId())
-                .map(PostImage::getImageUrl).orElse(null);
+                .map(PostImage::getImageUrl)
+                .orElse(null);
+
         long commentCount = commentRepository.countByPostPostId(post.getPostId());
         User author = post.getCreatedBy();
 
@@ -59,15 +59,14 @@ public class PostServiceImpl implements PostService {
                 .mainImageUrl(mainImg)
                 .commentCount(commentCount)
                 .createdAt(post.getCreatedAt())
-                .publishedAt(post.getPublishedAt())
                 .build();
     }
 
     private PostResponse toFullResponse(Post post) {
-        // Ảnh bài viết
         List<PostImageResponse> imageResponses = postImageRepository
                 .findByPostPostIdOrderByDisplayOrderAsc(post.getPostId())
-                .stream().map(img -> PostImageResponse.builder()
+                .stream()
+                .map(img -> PostImageResponse.builder()
                         .imageId(img.getImageId())
                         .imageUrl(img.getImageUrl())
                         .isMain(img.getIsMain())
@@ -81,14 +80,17 @@ public class PostServiceImpl implements PostService {
                 .map(PostImageResponse::getImageUrl)
                 .orElse(imageResponses.isEmpty() ? null : imageResponses.get(0).getImageUrl());
 
-        // Sản phẩm gắn trong bài viết
         List<PostProductResponse> productResponses = postProductRepository
                 .findByPostPostIdOrderByDisplayOrderAsc(post.getPostId())
-                .stream().map(pp -> {
+                .stream()
+                .map(pp -> {
                     Product p = pp.getProduct();
+
                     String pMainImg = productImageRepository
                             .findByProductProductIdAndIsMainTrue(p.getProductId())
-                            .map(ProductImage::getImageUrl).orElse(null);
+                            .map(ProductImage::getImageUrl)
+                            .orElse(null);
+
                     return PostProductResponse.builder()
                             .id(pp.getId())
                             .product(ProductSummaryResponse.builder()
@@ -102,7 +104,8 @@ public class PostServiceImpl implements PostService {
                             .displayOrder(pp.getDisplayOrder())
                             .note(pp.getNote())
                             .build();
-                }).toList();
+                })
+                .toList();
 
         long commentCount = commentRepository.countByPostPostId(post.getPostId());
         User author = post.getCreatedBy();
@@ -113,7 +116,7 @@ public class PostServiceImpl implements PostService {
                 .content(post.getContent())
                 .summary(post.getSummary())
                 .status(post.getStatus())
-                .rejectionReason(post.getRejectionReason())
+                .rejectionReason(post.getRejectReason())
                 .author(UserSummaryResponse.builder()
                         .userId(author.getUserId())
                         .fullName(author.getFullName())
@@ -124,15 +127,13 @@ public class PostServiceImpl implements PostService {
                 .products(productResponses)
                 .commentCount(commentCount)
                 .createdAt(post.getCreatedAt())
-                .publishedAt(post.getPublishedAt())
                 .build();
     }
-
-    // ── Validate quyền tạo/sửa bài ───────────────────────────────────────────
 
     private void assertCanWritePost(Integer userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", userId));
+
         if (user.getRole() != Role.WRITER
                 && user.getRole() != Role.LOYAL_CUSTOMER
                 && user.getRole() != Role.ADMIN) {
@@ -146,50 +147,57 @@ public class PostServiceImpl implements PostService {
         }
     }
 
-    // ── Sync images & products helper ─────────────────────────────────────────
-
     private void syncImages(Post post, List<PostImageRequest> requests) {
         postImageRepository.deleteByPostPostId(post.getPostId());
+
         if (requests == null || requests.isEmpty()) return;
 
-        List<PostImage> images = requests.stream().map(req -> PostImage.builder()
-                .post(post)
-                .imageUrl(req.getImageUrl())
-                .isMain(Boolean.TRUE.equals(req.getIsMain()))
-                .displayOrder(req.getDisplayOrder() != null ? req.getDisplayOrder() : 1)
-                .build()).toList();
+        List<PostImage> images = requests.stream()
+                .map(req -> PostImage.builder()
+                        .post(post)
+                        .imageUrl(req.getImageUrl())
+                        .isMain(Boolean.TRUE.equals(req.getIsMain()))
+                        .displayOrder(req.getDisplayOrder() != null ? req.getDisplayOrder() : 1)
+                        .build())
+                .toList();
 
         postImageRepository.saveAll(images);
     }
 
     private void syncProducts(Post post, List<PostProductRequest> requests) {
         postProductRepository.deleteAllByPostId(post.getPostId());
+
         if (requests == null || requests.isEmpty()) return;
 
-        List<PostProduct> postProducts = requests.stream().map(req -> {
-            Product product = productRepository.findById(req.getProductId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Product", req.getProductId()));
-            return PostProduct.builder()
-                    .post(post)
-                    .product(product)
-                    .displayOrder(req.getDisplayOrder() != null ? req.getDisplayOrder() : 1)
-                    .note(req.getNote())
-                    .build();
-        }).toList();
+        List<PostProduct> postProducts = requests.stream()
+                .map(req -> {
+                    Product product = productRepository.findById(req.getProductId())
+                            .orElseThrow(() -> new ResourceNotFoundException("Product", req.getProductId()));
+
+                    return PostProduct.builder()
+                            .post(post)
+                            .product(product)
+                            .displayOrder(req.getDisplayOrder() != null ? req.getDisplayOrder() : 1)
+                            .note(req.getNote())
+                            .build();
+                })
+                .toList();
 
         postProductRepository.saveAll(postProducts);
     }
-
-    // ── Public ────────────────────────────────────────────────────────────────
 
     @Override
     @Transactional(readOnly = true)
     public PageResponse<PostSummaryResponse> getPublishedPosts(String keyword, Pageable pageable) {
         Page<Post> page = StringUtils.hasText(keyword)
                 ? postRepository.searchPublished(keyword, pageable)
-                : postRepository.findByStatusOrderByCreatedAtDesc(PostStatus.PUBLISHED, pageable);
-        List<PostSummaryResponse> content = page.getContent().stream()
-                .map(this::toSummaryResponse).toList();
+                : postRepository.findByStatus(PostStatus.APPROVED, pageable);
+
+        List<PostSummaryResponse> content = page.getContent()
+                .stream()
+                .map(this::toSummaryResponse)
+                .toList();
+
         return PageResponse.of(page, content);
     }
 
@@ -198,24 +206,26 @@ public class PostServiceImpl implements PostService {
     public PostResponse getPublishedPost(Integer postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post", postId));
-        if (post.getStatus() != PostStatus.PUBLISHED) {
+
+        if (post.getStatus() != PostStatus.APPROVED) {
             throw new ResourceNotFoundException("Post", postId);
         }
+
         return toFullResponse(post);
     }
 
-    // ── Writer / Loyal Customer ───────────────────────────────────────────────
-
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<PostSummaryResponse> getMyPosts(Integer userId,
-                                                        PostStatus status,
-                                                        Pageable pageable) {
-        Page<Post> page = (status != null)
-                ? postRepository.findByCreatedByUserIdAndStatusOrderByCreatedAtDesc(userId, status, pageable)
-                : postRepository.findByCreatedByUserIdOrderByCreatedAtDesc(userId, pageable);
-        List<PostSummaryResponse> content = page.getContent().stream()
-                .map(this::toSummaryResponse).toList();
+    public PageResponse<PostSummaryResponse> getMyPosts(Integer userId, PostStatus status, Pageable pageable) {
+        Page<Post> page = status != null
+                ? postRepository.findByCreatedByUserIdAndStatus(userId, status, pageable)
+                : postRepository.findByCreatedByUserId(userId, pageable);
+
+        List<PostSummaryResponse> content = page.getContent()
+                .stream()
+                .map(this::toSummaryResponse)
+                .toList();
+
         return PageResponse.of(page, content);
     }
 
@@ -224,7 +234,9 @@ public class PostServiceImpl implements PostService {
     public PostResponse getMyPost(Integer userId, Integer postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post", postId));
+
         assertOwner(post, userId);
+
         return toFullResponse(post);
     }
 
@@ -241,14 +253,14 @@ public class PostServiceImpl implements PostService {
                 .content(request.getContent())
                 .summary(request.getSummary())
                 .createdBy(user)
-                .status(PostStatus.DRAFT)
+                .status(PostStatus.PENDING)
                 .build();
+
         postRepository.save(post);
 
         syncImages(post, request.getImages());
         syncProducts(post, request.getProducts());
 
-        log.info("[Post] User {} tạo bài viết id={}", userId, post.getPostId());
         return toFullResponse(post);
     }
 
@@ -257,22 +269,23 @@ public class PostServiceImpl implements PostService {
     public PostResponse update(Integer userId, Integer postId, PostRequest request) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post", postId));
+
         assertOwner(post, userId);
 
-        if (post.getStatus() == PostStatus.PENDING
-                || post.getStatus() == PostStatus.PUBLISHED) {
-            throw new BadRequestException(
-                    "Không thể sửa bài viết đang chờ duyệt hoặc đã đăng");
+        if (post.getStatus() == PostStatus.APPROVED) {
+            throw new BadRequestException("Không thể sửa bài viết đã được duyệt");
         }
 
         post.setTitle(request.getTitle());
         post.setContent(request.getContent());
         post.setSummary(request.getSummary());
-        // Khi sửa lại bài đã REJECTED → reset về DRAFT
+        post.setUpdatedAt(LocalDateTime.now());
+
         if (post.getStatus() == PostStatus.REJECTED) {
-            post.setStatus(PostStatus.DRAFT);
-            post.setRejectionReason(null);
+            post.setStatus(PostStatus.PENDING);
+            post.setRejectReason(null);
         }
+
         postRepository.save(post);
 
         syncImages(post, request.getImages());
@@ -286,16 +299,19 @@ public class PostServiceImpl implements PostService {
     public PostResponse submit(Integer userId, Integer postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post", postId));
+
         assertOwner(post, userId);
 
-        if (post.getStatus() != PostStatus.DRAFT && post.getStatus() != PostStatus.REJECTED) {
-            throw new BadRequestException(
-                    "Chỉ có thể gửi duyệt bài viết đang ở trạng thái DRAFT hoặc REJECTED");
+        if (post.getStatus() != PostStatus.REJECTED) {
+            throw new BadRequestException("Chỉ có thể gửi lại bài viết bị từ chối");
         }
 
         post.setStatus(PostStatus.PENDING);
+        post.setRejectReason(null);
+        post.setUpdatedAt(LocalDateTime.now());
+
         postRepository.save(post);
-        log.info("[Post] User {} gửi duyệt bài id={}", userId, postId);
+
         return toFullResponse(post);
     }
 
@@ -304,18 +320,15 @@ public class PostServiceImpl implements PostService {
     public void delete(Integer userId, Integer postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post", postId));
+
         assertOwner(post, userId);
 
-        if (post.getStatus() == PostStatus.PENDING
-                || post.getStatus() == PostStatus.PUBLISHED) {
-            throw new BadRequestException(
-                    "Không thể xóa bài viết đang chờ duyệt hoặc đã đăng");
+        if (post.getStatus() == PostStatus.APPROVED) {
+            throw new BadRequestException("Không thể xóa bài viết đã được duyệt");
         }
-        postRepository.delete(post);
-        log.info("[Post] User {} xóa bài id={}", userId, postId);
-    }
 
-    // ── Admin ─────────────────────────────────────────────────────────────────
+        postRepository.delete(post);
+    }
 
     @Override
     @Transactional(readOnly = true)
@@ -327,9 +340,14 @@ public class PostServiceImpl implements PostService {
                 status,
                 authorId,
                 StringUtils.hasText(keyword) ? keyword : null,
-                pageable);
-        List<PostSummaryResponse> content = page.getContent().stream()
-                .map(this::toSummaryResponse).toList();
+                pageable
+        );
+
+        List<PostSummaryResponse> content = page.getContent()
+                .stream()
+                .map(this::toSummaryResponse)
+                .toList();
+
         return PageResponse.of(page, content);
     }
 
@@ -344,20 +362,21 @@ public class PostServiceImpl implements PostService {
         }
 
         if (Boolean.TRUE.equals(request.getApproved())) {
-            post.setStatus(PostStatus.PUBLISHED);
-            post.setPublishedAt(LocalDateTime.now());
-            post.setRejectionReason(null);
-            log.info("[Post] Admin duyệt bài id={}", postId);
+            post.setStatus(PostStatus.APPROVED);
+            post.setApprovedAt(LocalDateTime.now());
+            post.setRejectReason(null);
         } else {
             if (!StringUtils.hasText(request.getRejectionReason())) {
                 throw new BadRequestException("Vui lòng nhập lý do từ chối");
             }
+
             post.setStatus(PostStatus.REJECTED);
-            post.setRejectionReason(request.getRejectionReason());
-            log.info("[Post] Admin từ chối bài id={}, lý do={}", postId, request.getRejectionReason());
+            post.setRejectReason(request.getRejectionReason());
         }
 
+        post.setUpdatedAt(LocalDateTime.now());
         postRepository.save(post);
+
         return toFullResponse(post);
     }
 
@@ -366,7 +385,7 @@ public class PostServiceImpl implements PostService {
     public void adminDelete(Integer postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post", postId));
+
         postRepository.delete(post);
-        log.info("[Post] Admin xóa bài id={}", postId);
     }
 }

@@ -61,7 +61,7 @@ public class ReviewServiceImpl implements ReviewService {
             throw new ResourceNotFoundException("Product", productId);
         }
         Page<Review> page = reviewRepository
-                .findByProductProductIdOrderByCreatedAtDesc(productId, pageable);
+                .findByProductProductId(productId, pageable);
         List<ReviewResponse> content = page.getContent().stream().map(this::toResponse).toList();
         return PageResponse.of(page, content);
     }

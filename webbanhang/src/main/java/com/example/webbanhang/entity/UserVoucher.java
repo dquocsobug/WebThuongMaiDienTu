@@ -23,8 +23,8 @@ public class UserVoucher {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ID")
-    private Integer id;
+    @Column(name = "UserVoucherID")
+    private Integer userVoucherId;
 
     @Column(name = "IsUsed", nullable = false)
     @Builder.Default
@@ -36,8 +36,6 @@ public class UserVoucher {
     @CreationTimestamp
     @Column(name = "AssignedAt", nullable = false, updatable = false)
     private LocalDateTime assignedAt;
-
-    // ── Relationships ────────────────────────────────────────────────────────
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "UserID", nullable = false)

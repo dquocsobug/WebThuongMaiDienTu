@@ -11,42 +11,29 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Integer> {
 
-    // ── Tìm theo danh mục ───────────────────────────────────────────────────
+    // ── Tìm theo danh mục (chỉ active) ───────────────────────────────────────
 
-    Page<Product> findByCategoryCategoryId(Integer categoryId, Pageable pageable);
+    Page<Product> findByCategoryCategoryIdAndIsActiveTrue(Integer categoryId, Pageable pageable);
 
     List<Product> findByCategoryCategoryId(Integer categoryId);
 
-    // ── Tìm kiếm full-text ───────────────────────────────────────────────────
+    // FIX: thêm findByIdAndIsActiveTrue — getById chỉ lấy sản phẩm đang bán
+    Optional<Product> findByProductIdAndIsActiveTrue(Integer productId);
+
+    // FIX: existsBy cho isActive — dùng trong getRatingStats
+    boolean existsByProductIdAndIsActiveTrue(Integer productId);
+
+    // ── Tìm kiếm + filter (chỉ active) ───────────────────────────────────────
 
     @Query("""
         SELECT p FROM Product p
-        WHERE LOWER(p.productName) LIKE LOWER(CONCAT('%', :keyword, '%'))
-           OR LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%'))
-        """)
-    Page<Product> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
-
-    // ── Lọc theo khoảng giá ─────────────────────────────────────────────────
-
-    @Query("""
-        SELECT p FROM Product p
-        WHERE (:minPrice IS NULL OR p.price >= :minPrice)
-          AND (:maxPrice IS NULL OR p.price <= :maxPrice)
-        """)
-    Page<Product> findByPriceRange(
-            @Param("minPrice") BigDecimal minPrice,
-            @Param("maxPrice") BigDecimal maxPrice,
-            Pageable pageable);
-
-    // ── Lọc kết hợp: keyword + category + price ──────────────────────────────
-
-    @Query("""
-        SELECT p FROM Product p
-        WHERE (:keyword   IS NULL OR LOWER(p.productName) LIKE LOWER(CONCAT('%', :keyword, '%')))
+        WHERE p.isActive = true
+          AND (:keyword    IS NULL OR LOWER(p.productName) LIKE LOWER(CONCAT('%', :keyword, '%')))
           AND (:categoryId IS NULL OR p.category.categoryId = :categoryId)
           AND (:minPrice   IS NULL OR p.price >= :minPrice)
           AND (:maxPrice   IS NULL OR p.price <= :maxPrice)
@@ -58,13 +45,11 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
             @Param("maxPrice")   BigDecimal maxPrice,
             Pageable pageable);
 
-    // ── Tồn kho ─────────────────────────────────────────────────────────────
+    // ── Tồn kho ───────────────────────────────────────────────────────────────
 
-    List<Product> findByStockLessThan(int threshold);
+    List<Product> findByStockLessThanAndIsActiveTrue(int threshold);
 
-    List<Product> findByStockGreaterThan(int threshold);
-
-    // ── Cập nhật tồn kho ─────────────────────────────────────────────────────
+    // ── Cập nhật tồn kho (atomic) ─────────────────────────────────────────────
 
     @Modifying
     @Query("UPDATE Product p SET p.stock = p.stock - :qty WHERE p.productId = :id AND p.stock >= :qty")
@@ -74,21 +59,22 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
     @Query("UPDATE Product p SET p.stock = p.stock + :qty WHERE p.productId = :id")
     int increaseStock(@Param("id") Integer productId, @Param("qty") int quantity);
 
-    // ── Sản phẩm nổi bật (có trong bài viết đã publish) ────────────────────
-
+    // FIX: findFeaturedProducts lọc thêm p.isActive = true
     @Query("""
-        SELECT DISTINCT pp.product FROM PostProduct pp
-        WHERE pp.post.status = 'PUBLISHED'
+        SELECT pp.product FROM PostProduct pp
+        WHERE pp.post.status = 'APPROVED'
+          AND pp.product.isActive = true
         ORDER BY pp.displayOrder ASC
         """)
     List<Product> findFeaturedProducts(Pageable pageable);
 
-    // ── Sản phẩm có khuyến mãi đang hoạt động ──────────────────────────────
-
+    // FIX: findProductsWithActivePromotion lọc thêm isActive = true
     @Query("""
         SELECT DISTINCT pp.product FROM ProductPromotion pp
-        WHERE pp.promotion.startDate <= CURRENT_TIMESTAMP
-          AND pp.promotion.endDate   >= CURRENT_TIMESTAMP
+        WHERE pp.product.isActive = true
+          AND pp.promotion.isActive = true
+          AND (pp.promotion.startDate IS NULL OR pp.promotion.startDate <= CURRENT_TIMESTAMP)
+          AND (pp.promotion.endDate   IS NULL OR pp.promotion.endDate   >= CURRENT_TIMESTAMP)
         """)
     List<Product> findProductsWithActivePromotion();
 

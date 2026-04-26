@@ -34,16 +34,16 @@ public class Order {
     @Builder.Default
     private OrderStatus status = OrderStatus.PENDING;
 
-    @Column(name = "ReceiverName", length = 100)
+    @Column(name = "ReceiverName", length = 100, nullable = false)
     private String receiverName;
 
-    @Column(name = "ReceiverPhone", length = 20)
+    @Column(name = "ReceiverPhone", length = 20, nullable = false)
     private String receiverPhone;
 
-    @Column(name = "ShippingAddress", length = 255)
+    @Column(name = "ShippingAddress", length = 255, nullable = false)
     private String shippingAddress;
 
-    @Column(name = "PaymentMethod", length = 50)
+    @Column(name = "PaymentMethod", length = 50, nullable = false)
     private String paymentMethod;
 
     @Enumerated(EnumType.STRING)
@@ -54,17 +54,31 @@ public class Order {
     @Column(name = "Note", length = 255)
     private String note;
 
+    @Column(name = "DiscountAmount", nullable = false, precision = 18, scale = 2)
+    @Builder.Default
+    private BigDecimal discountAmount = BigDecimal.ZERO;
+
+    @Column(name = "FinalAmount", nullable = false, precision = 18, scale = 2)
+    @Builder.Default
+    private BigDecimal finalAmount = BigDecimal.ZERO;
+
     @CreationTimestamp
     @Column(name = "CreatedAt", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    // ── Relationships ────────────────────────────────────────────────────────
+    @Column(name = "UpdatedAt")
+    private LocalDateTime updatedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "UserID", nullable = false)
     private User user;
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(
+            mappedBy = "order",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.LAZY
+    )
     @Builder.Default
     private List<OrderDetail> orderDetails = new ArrayList<>();
 }

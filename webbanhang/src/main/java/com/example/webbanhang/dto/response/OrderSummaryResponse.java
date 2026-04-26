@@ -15,13 +15,17 @@ import java.time.LocalDateTime;
 @Builder
 public class OrderSummaryResponse {
 
-    private final Integer       orderId;
-    private final Integer       userId;
-    private final String        receiverName;
-    private final BigDecimal    totalAmount;
-    private final OrderStatus   status;
+    private final Integer orderId;
+    private final Integer userId;
+    private final String receiverName;
+
+    private final BigDecimal totalAmount;
+    private final BigDecimal finalAmount;
+
+    private final OrderStatus status;
     private final PaymentStatus paymentStatus;
-    private final String        paymentMethod;
-    private final int           itemCount;     // Tổng số sản phẩm trong đơn
+    private final String paymentMethod;
+
+    private final int itemCount;
     private final LocalDateTime createdAt;
 }

@@ -11,10 +11,8 @@ import java.util.List;
 
 @Entity
 @Table(name = "Users")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
+@Getter @Setter
+@NoArgsConstructor @AllArgsConstructor
 @Builder
 public class User {
 
@@ -23,7 +21,7 @@ public class User {
     @Column(name = "UserID")
     private Integer userId;
 
-    @Column(name = "FullName", length = 100)
+    @Column(name = "FullName", length = 100, nullable = false)
     private String fullName;
 
     @Column(name = "Email", length = 100, nullable = false, unique = true)
@@ -39,15 +37,23 @@ public class User {
     private String address;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "Role", length = 20, nullable = false)
+    @Column(name = "Role", length = 30, nullable = false)
     @Builder.Default
-    private Role role = Role.USER;
+    private Role role = Role.CUSTOMER;
+
+    @Column(name = "IsActive", nullable = false)
+    @Builder.Default
+    private Boolean isActive = true;
+
+    /** Ngày trở thành khách hàng thân thiết. Null nếu chưa đạt điều kiện. */
+    @Column(name = "LoyalSince")
+    private LocalDateTime loyalSince;
 
     @CreationTimestamp
     @Column(name = "CreatedAt", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    // ── Relationships ────────────────────────────────────────────────────────
+    // ── Relationships ─────────────────────────────────────────────────────────
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Cart cart;

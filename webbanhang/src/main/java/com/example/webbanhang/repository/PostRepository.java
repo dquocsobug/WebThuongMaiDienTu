@@ -7,55 +7,49 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
-@Repository
 public interface PostRepository extends JpaRepository<Post, Integer> {
 
-    // ── Lấy bài viết theo trạng thái (public feed) ───────────────────────────
+    Page<Post> findByStatus(PostStatus status, Pageable pageable);
 
-    Page<Post> findByStatusOrderByCreatedAtDesc(PostStatus status, Pageable pageable);
+    Page<Post> findByCreatedByUserId(Integer userId, Pageable pageable);
 
-    // ── Lấy bài viết của một tác giả ─────────────────────────────────────────
-
-    Page<Post> findByCreatedByUserIdOrderByCreatedAtDesc(Integer userId, Pageable pageable);
-
-    // ── Lấy bài viết của tác giả theo trạng thái ─────────────────────────────
-
-    Page<Post> findByCreatedByUserIdAndStatusOrderByCreatedAtDesc(
-            Integer userId, PostStatus status, Pageable pageable);
-
-    // ── Tìm kiếm bài viết đã publish ─────────────────────────────────────────
+    Page<Post> findByCreatedByUserIdAndStatus(
+            Integer userId,
+            PostStatus status,
+            Pageable pageable
+    );
 
     @Query("""
         SELECT p FROM Post p
-        WHERE p.status = 'PUBLISHED'
-          AND (LOWER(p.title)   LIKE LOWER(CONCAT('%', :keyword, '%'))
-            OR LOWER(p.summary) LIKE LOWER(CONCAT('%', :keyword, '%'))
-            OR LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%')))
-        ORDER BY p.createdAt DESC
+        WHERE p.status = com.example.webbanhang.enums.PostStatus.APPROVED
+          AND (
+                LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%'))
+             OR LOWER(p.summary) LIKE LOWER(CONCAT('%', :keyword, '%'))
+             OR LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%'))
+          )
         """)
     Page<Post> searchPublished(@Param("keyword") String keyword, Pageable pageable);
 
-    // ── Admin lọc kết hợp ────────────────────────────────────────────────────
-
     @Query("""
         SELECT p FROM Post p
-        WHERE (:status  IS NULL OR p.status = :status)
+        WHERE (:status IS NULL OR p.status = :status)
           AND (:authorId IS NULL OR p.createdBy.userId = :authorId)
-          AND (:keyword  IS NULL
-                OR LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')))
-        ORDER BY p.createdAt DESC
+          AND (
+                :keyword IS NULL
+             OR LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%'))
+             OR LOWER(p.summary) LIKE LOWER(CONCAT('%', :keyword, '%'))
+             OR LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%'))
+          )
         """)
     Page<Post> findWithFilters(
-            @Param("status")   PostStatus status,
+            @Param("status") PostStatus status,
             @Param("authorId") Integer authorId,
-            @Param("keyword")  String keyword,
-            Pageable pageable);
-
-    // ── Lấy post kèm images + postProducts + product (tránh N+1) ─────────────
+            @Param("keyword") String keyword,
+            Pageable pageable
+    );
 
     @Query("""
         SELECT DISTINCT p FROM Post p
@@ -72,11 +66,7 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
         """)
     Optional<Post> findByIdWithProducts(@Param("postId") Integer postId);
 
-    // ── Đếm bài viết theo trạng thái (Dashboard Admin) ───────────────────────
-
     long countByStatus(PostStatus status);
-
-    // ── Đếm bài viết của tác giả ─────────────────────────────────────────────
 
     long countByCreatedByUserId(Integer userId);
 }

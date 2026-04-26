@@ -3,6 +3,7 @@ package com.example.webbanhang.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,8 +25,14 @@ public class Promotion {
     @Column(name = "PromotionName", length = 255, nullable = false)
     private String promotionName;
 
-    @Column(name = "DiscountPercent", nullable = false)
+    @Column(name = "DiscountPercent")
     private Integer discountPercent;
+
+    @Column(name = "DiscountAmount", precision = 18, scale = 2)
+    private BigDecimal discountAmount;
+
+    @Column(name = "TargetRole", length = 30)
+    private String targetRole;
 
     @Column(name = "StartDate")
     private LocalDateTime startDate;
@@ -33,18 +40,25 @@ public class Promotion {
     @Column(name = "EndDate")
     private LocalDateTime endDate;
 
-    // ── Relationships ────────────────────────────────────────────────────────
+    @Column(name = "IsActive", nullable = false)
+    @Builder.Default
+    private Boolean isActive = true;
+
+    @Column(name = "CreatedAt")
+    private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "promotion", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
     private List<ProductPromotion> productPromotions = new ArrayList<>();
 
-    // Kiểm tra khuyến mãi có đang hoạt động không
     @Transient
-    public boolean isActive() {
+    public boolean isCurrentlyActive() {
+        if (Boolean.FALSE.equals(isActive)) return false;
+
         LocalDateTime now = LocalDateTime.now();
         if (startDate != null && now.isBefore(startDate)) return false;
         if (endDate != null && now.isAfter(endDate)) return false;
+
         return true;
     }
 }

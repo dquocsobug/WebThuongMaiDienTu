@@ -16,7 +16,7 @@ public interface ReviewRepository extends JpaRepository<Review, Integer> {
 
     // ── Lấy tất cả review của sản phẩm ───────────────────────────────────────
 
-    Page<Review> findByProductProductIdOrderByCreatedAtDesc(Integer productId, Pageable pageable);
+    Page<Review> findByProductProductId(Integer productId, Pageable pageable);
 
     List<Review> findByProductProductId(Integer productId);
 

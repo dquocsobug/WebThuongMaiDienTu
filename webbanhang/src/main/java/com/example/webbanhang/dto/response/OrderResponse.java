@@ -13,16 +13,23 @@ import java.util.List;
 @Builder
 public class OrderResponse {
 
-    private final Integer                  orderId;
-    private final UserSummaryResponse      user;
+    private final Integer orderId;
+    private final UserSummaryResponse user;
     private final List<OrderDetailResponse> orderDetails;
-    private final BigDecimal               totalAmount;
-    private final OrderStatus              status;
-    private final String                   receiverName;
-    private final String                   receiverPhone;
-    private final String                   shippingAddress;
-    private final String                   paymentMethod;
-    private final PaymentStatus            paymentStatus;
-    private final String                   note;
-    private final LocalDateTime            createdAt;
+
+    private final BigDecimal totalAmount;
+    private final BigDecimal discountAmount;
+    private final BigDecimal finalAmount;
+
+    private final OrderStatus status;
+
+    private final String receiverName;
+    private final String receiverPhone;
+    private final String shippingAddress;
+
+    private final String paymentMethod;
+    private final PaymentStatus paymentStatus;
+
+    private final String note;
+    private final LocalDateTime createdAt;
 }

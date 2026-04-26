@@ -23,8 +23,6 @@ public class ProductPromotion {
     @Column(name = "ID")
     private Integer id;
 
-    // ── Relationships ────────────────────────────────────────────────────────
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ProductID", nullable = false)
     private Product product;

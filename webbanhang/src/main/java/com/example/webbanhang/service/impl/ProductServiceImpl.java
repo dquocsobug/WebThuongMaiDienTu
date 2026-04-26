@@ -7,6 +7,7 @@ import com.example.webbanhang.entity.*;
 import com.example.webbanhang.exception.BadRequestException;
 import com.example.webbanhang.exception.ResourceNotFoundException;
 import com.example.webbanhang.repository.*;
+import com.example.webbanhang.security.SecurityUtil;
 import com.example.webbanhang.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,20 +17,21 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
 
-    private final ProductRepository        productRepository;
-    private final ProductImageRepository   productImageRepository;
-    private final CategoryRepository       categoryRepository;
-    private final ReviewRepository         reviewRepository;
-    private final PromotionRepository      promotionRepository;
+    private final ProductRepository      productRepository;
+    private final ProductImageRepository productImageRepository;
+    private final CategoryRepository     categoryRepository;
+    private final ReviewRepository       reviewRepository;
+    private final PromotionRepository    promotionRepository;
+    private final UserRepository         userRepository;
 
     // ── Mapper ────────────────────────────────────────────────────────────────
 
@@ -56,22 +58,27 @@ public class ProductServiceImpl implements ProductService {
 
         // Rating
         Double avgRating  = reviewRepository.calculateAverageRating(product.getProductId());
-        long reviewCount   = reviewRepository.countByProductProductId(product.getProductId());
+        long   reviewCount = reviewRepository.countByProductProductId(product.getProductId());
 
-        // Khuyến mãi đang hoạt động — lấy % cao nhất
+        // Khuyến mãi đang hoạt động — lấy % giảm cao nhất
+        // FIX: Promotion schema mới có thể có discountPercent NULL (nếu dùng discountAmount)
+        // → chỉ lấy promotion có discountPercent != null
         List<Promotion> activePromotions = promotionRepository
                 .findActivePromotionsByProductId(product.getProductId(), LocalDateTime.now());
 
         Integer discountPercent = activePromotions.stream()
                 .map(Promotion::getDiscountPercent)
+                .filter(Objects::nonNull)
                 .max(Integer::compareTo)
                 .orElse(null);
 
         BigDecimal discountedPrice = null;
         if (discountPercent != null) {
-            BigDecimal factor = BigDecimal.valueOf(100 - discountPercent).divide(BigDecimal.valueOf(100));
-            discountedPrice = product.getPrice().multiply(factor)
-                    .setScale(2, java.math.RoundingMode.HALF_UP);
+            BigDecimal factor = BigDecimal.valueOf(100 - discountPercent)
+                    .divide(BigDecimal.valueOf(100));
+            discountedPrice = product.getPrice()
+                    .multiply(factor)
+                    .setScale(2, RoundingMode.HALF_UP);
         }
 
         return ProductResponse.builder()
@@ -116,6 +123,7 @@ public class ProductServiceImpl implements ProductService {
                                                 BigDecimal minPrice,
                                                 BigDecimal maxPrice,
                                                 Pageable pageable) {
+        // FIX: findWithFilters đã lọc isActive = true trong query (xem ProductRepository)
         Page<Product> page = productRepository.findWithFilters(
                 keyword, categoryId, minPrice, maxPrice, pageable);
         List<ProductResponse> content = page.getContent().stream()
@@ -127,7 +135,8 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public ProductResponse getById(Integer productId) {
-        Product product = productRepository.findById(productId)
+        // FIX: chỉ lấy sản phẩm đang active
+        Product product = productRepository.findByProductIdAndIsActiveTrue(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", productId));
         return toResponse(product);
     }
@@ -135,7 +144,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public ProductRatingStatsResponse getRatingStats(Integer productId) {
-        if (!productRepository.existsById(productId)) {
+        if (!productRepository.existsByProductIdAndIsActiveTrue(productId)) {
             throw new ResourceNotFoundException("Product", productId);
         }
         Double avg        = reviewRepository.calculateAverageRating(productId);
@@ -157,6 +166,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public List<ProductResponse> getFeaturedProducts(Pageable pageable) {
+        // FIX: findFeaturedProducts cần lọc isActive = true (xem ProductRepository)
         return productRepository.findFeaturedProducts(pageable).stream()
                 .map(this::toResponse)
                 .toList();
@@ -178,16 +188,24 @@ public class ProductServiceImpl implements ProductService {
         Category category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Category", request.getCategoryId()));
 
+        // FIX: lấy user đang đăng nhập làm createdBy (schema mới có cột CreatedBy)
+        Integer currentUserId = SecurityUtil.getCurrentUserId();
+        User createdBy = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", currentUserId));
+
         Product product = Product.builder()
                 .productName(request.getProductName())
                 .description(request.getDescription())
                 .price(request.getPrice())
                 .stock(request.getStock())
                 .category(category)
+                .createdBy(createdBy)           // FIX: set createdBy
+                .isActive(true)                 // FIX: tường minh set isActive
                 .build();
 
         productRepository.save(product);
-        log.info("[Product] Tạo sản phẩm mới: id={}, name={}", product.getProductId(), product.getProductName());
+        log.info("[Product] Tạo sản phẩm: id={}, name={}, createdBy={}",
+                product.getProductId(), product.getProductName(), currentUserId);
         return toResponse(product);
     }
 
@@ -205,6 +223,7 @@ public class ProductServiceImpl implements ProductService {
         product.setPrice(request.getPrice());
         product.setStock(request.getStock());
         product.setCategory(category);
+        // updatedAt tự động cập nhật qua @UpdateTimestamp trong entity
 
         return toResponse(productRepository.save(product));
     }
@@ -212,15 +231,17 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional
     public void delete(Integer productId) {
-        if (!productRepository.existsById(productId)) {
-            throw new ResourceNotFoundException("Product", productId);
-        }
-        productImageRepository.deleteByProductProductId(productId);
-        productRepository.deleteById(productId);
-        log.info("[Product] Xóa sản phẩm id={}", productId);
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product", productId));
+
+        // FIX: soft delete — set isActive = false
+        // tránh lỗi FK từ OrderDetails, CartItems, Reviews, PostProducts
+        product.setIsActive(false);
+        productRepository.save(product);
+        log.info("[Product] Ẩn sản phẩm id={}", productId);
     }
 
-    // ── Image management ─────────────────────────────────────────────────────
+    // ── Image management ──────────────────────────────────────────────────────
 
     @Override
     @Transactional
@@ -228,7 +249,6 @@ public class ProductServiceImpl implements ProductService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", productId));
 
-        // Nếu set isMain=true, bỏ cờ tất cả ảnh cũ trước
         if (Boolean.TRUE.equals(request.getIsMain())) {
             productImageRepository.clearMainImageByProductId(productId);
         }

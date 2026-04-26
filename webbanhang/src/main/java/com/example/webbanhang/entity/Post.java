@@ -26,32 +26,47 @@ public class Post {
     @Column(name = "Title", length = 255, nullable = false)
     private String title;
 
-    @Column(name = "Content", columnDefinition = "NVARCHAR(MAX)", nullable = false)
-    private String content;
-
     @Column(name = "Summary", length = 500)
     private String summary;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "Status", length = 20, nullable = false)
-    @Builder.Default
-    private PostStatus status = PostStatus.DRAFT;
+    @Column(name = "Content", columnDefinition = "NVARCHAR(MAX)", nullable = false)
+    private String content;
 
-    @Column(name = "RejectionReason", length = 500)
-    private String rejectionReason;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "CreatedBy", nullable = false)
+    private User createdBy;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "Status", length = 30, nullable = false)
+    @Builder.Default
+    private PostStatus status = PostStatus.PENDING;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ApprovedBy")
+    private User approvedBy;
+
+    @Column(name = "ApprovedAt")
+    private LocalDateTime approvedAt;
+
+    @Column(name = "RejectReason", length = 255)
+    private String rejectReason;
+
+    @Column(name = "ViewCount", nullable = false)
+    @Builder.Default
+    private Integer viewCount = 0;
+
+    @Column(name = "IsFeatured", nullable = false)
+    @Builder.Default
+    private Boolean isFeatured = false;
 
     @CreationTimestamp
     @Column(name = "CreatedAt", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "PublishedAt")
-    private LocalDateTime publishedAt;
+    @Column(name = "UpdatedAt")
+    private LocalDateTime updatedAt;
 
     // ── Relationships ────────────────────────────────────────────────────────
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "CreatedBy", nullable = false)
-    private User createdBy;
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default

@@ -3,6 +3,7 @@ package com.example.webbanhang.dto.response;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -10,11 +11,17 @@ import java.util.List;
 @Builder
 public class PromotionResponse {
 
-    private final Integer                    promotionId;
-    private final String                     promotionName;
-    private final Integer                    discountPercent;
-    private final LocalDateTime              startDate;
-    private final LocalDateTime              endDate;
-    private final boolean                    active; // Tính tại service
-    private final List<ProductSummaryResponse> products; // Sản phẩm đang áp dụng
+    private final Integer promotionId;
+    private final String promotionName;
+
+    private final Integer discountPercent;
+    private final BigDecimal discountAmount;
+    private final String targetRole;
+
+    private final LocalDateTime startDate;
+    private final LocalDateTime endDate;
+
+    private final boolean active;
+
+    private final List<ProductSummaryResponse> products;
 }

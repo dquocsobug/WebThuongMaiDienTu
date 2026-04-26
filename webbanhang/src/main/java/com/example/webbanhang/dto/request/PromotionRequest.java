@@ -4,6 +4,7 @@ import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Getter
@@ -14,10 +15,18 @@ public class PromotionRequest {
     @Size(max = 255, message = "Tên khuyến mãi tối đa 255 ký tự")
     private String promotionName;
 
-    @NotNull(message = "Phần trăm giảm không được để trống")
-    @Min(value = 0,   message = "Phần trăm giảm không được âm")
+    @Min(value = 0, message = "Phần trăm giảm không được âm")
     @Max(value = 100, message = "Phần trăm giảm tối đa 100%")
     private Integer discountPercent;
+
+    @DecimalMin(value = "0.0", message = "Số tiền giảm không được âm")
+    private BigDecimal discountAmount;
+
+    @Pattern(
+            regexp = "ALL|CUSTOMER|LOYAL_CUSTOMER",
+            message = "TargetRole phải là ALL, CUSTOMER hoặc LOYAL_CUSTOMER"
+    )
+    private String targetRole;
 
     private LocalDateTime startDate;
 

@@ -29,10 +29,8 @@ import java.util.List;
 public class CommentServiceImpl implements CommentService {
 
     private final CommentRepository commentRepository;
-    private final PostRepository    postRepository;
-    private final UserRepository    userRepository;
-
-    // ── Mapper ────────────────────────────────────────────────────────────────
+    private final PostRepository postRepository;
+    private final UserRepository userRepository;
 
     private CommentResponse toResponse(Comment comment) {
         User u = comment.getUser();
@@ -49,26 +47,25 @@ public class CommentServiceImpl implements CommentService {
                 .build();
     }
 
-    // ── Public ────────────────────────────────────────────────────────────────
-
     @Override
     @Transactional(readOnly = true)
     public PageResponse<CommentResponse> getByPost(Integer postId, Pageable pageable) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post", postId));
 
-        if (post.getStatus() != PostStatus.PUBLISHED) {
+        if (post.getStatus() != PostStatus.APPROVED) {
             throw new BadRequestException("Bài viết không tồn tại hoặc chưa được duyệt");
         }
 
-        Page<Comment> page = commentRepository
-                .findByPostPostIdOrderByCreatedAtAsc(postId, pageable);
-        List<CommentResponse> content = page.getContent().stream()
-                .map(this::toResponse).toList();
+        Page<Comment> page = commentRepository.findByPostPostId(postId, pageable);
+
+        List<CommentResponse> content = page.getContent()
+                .stream()
+                .map(this::toResponse)
+                .toList();
+
         return PageResponse.of(page, content);
     }
-
-    // ── Authenticated ─────────────────────────────────────────────────────────
 
     @Override
     @Transactional
@@ -76,8 +73,8 @@ public class CommentServiceImpl implements CommentService {
         Post post = postRepository.findById(request.getPostId())
                 .orElseThrow(() -> new ResourceNotFoundException("Post", request.getPostId()));
 
-        if (post.getStatus() != PostStatus.PUBLISHED) {
-            throw new BadRequestException("Chỉ có thể bình luận bài viết đã được đăng");
+        if (post.getStatus() != PostStatus.APPROVED) {
+            throw new BadRequestException("Chỉ có thể bình luận bài viết đã được duyệt");
         }
 
         User user = userRepository.findById(userId)
@@ -115,6 +112,7 @@ public class CommentServiceImpl implements CommentService {
         if (!isAdmin && !comment.getUser().getUserId().equals(userId)) {
             throw new ForbiddenException("Bạn không có quyền xóa bình luận này");
         }
+
         commentRepository.delete(comment);
     }
 }

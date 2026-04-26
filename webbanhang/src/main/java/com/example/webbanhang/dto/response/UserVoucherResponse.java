@@ -9,9 +9,13 @@ import java.time.LocalDateTime;
 @Builder
 public class UserVoucherResponse {
 
-    private final Integer         id;
+    private final Integer userVoucherId;
+
     private final VoucherResponse voucher;
-    private final Boolean         isUsed;
-    private final LocalDateTime   usedAt;
-    private final LocalDateTime   assignedAt;
+
+    private final Boolean isUsed;
+
+    private final LocalDateTime usedAt;
+
+    private final LocalDateTime assignedAt;
 }

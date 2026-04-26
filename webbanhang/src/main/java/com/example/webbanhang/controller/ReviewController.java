@@ -47,7 +47,7 @@ public class ReviewController {
 
     // POST /api/reviews  — USER, LOYAL_CUSTOMER (đã mua & DELIVERED)
     @PostMapping
-    @PreAuthorize("hasAnyRole('USER','LOYAL_CUSTOMER','WRITER','ADMIN')")
+    @PreAuthorize("hasAnyRole('CUSTOMER','LOYAL_CUSTOMER','WRITER','ADMIN')")
     public ResponseEntity<ApiResponse<ReviewResponse>> create(
             @Valid @RequestBody ReviewRequest request) {
         ReviewResponse data = reviewService.create(SecurityUtil.getCurrentUserId(), request);

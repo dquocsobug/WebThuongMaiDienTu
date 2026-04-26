@@ -1,8 +1,7 @@
 package com.example.webbanhang.enums;
 
 public enum PostStatus {
-    DRAFT,     // Nháp
     PENDING,   // Chờ duyệt
-    PUBLISHED, // Đã đăng
+    APPROVED,  // Đã duyệt
     REJECTED   // Bị từ chối
 }

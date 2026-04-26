@@ -22,23 +22,13 @@ public class OrderDetail {
     @Column(name = "Quantity", nullable = false)
     private Integer quantity;
 
-    /**
-     * Giá tại thời điểm đặt hàng (snapshot từ Products.Price).
-     * Tên cột vật lý là "Price" trong DB nhưng ta ánh xạ sang unitPrice để rõ nghĩa.
-     */
-    @Column(name = "Price", nullable = false, precision = 18, scale = 2)
+    // ✅ ĐÚNG theo DB
+    @Column(name = "UnitPrice", nullable = false, precision = 18, scale = 2)
     private BigDecimal unitPrice;
 
-    /**
-     * Subtotal = unitPrice * quantity.
-     * Cột này không tồn tại trong DB gốc → tính bằng @Transient hoặc thêm cột migration.
-     * Ở đây dùng @Transient để không ảnh hưởng schema hiện tại.
-     */
-    @Transient
-    public BigDecimal getSubtotal() {
-        if (unitPrice == null || quantity == null) return BigDecimal.ZERO;
-        return unitPrice.multiply(BigDecimal.valueOf(quantity));
-    }
+    // ✅ DB CÓ cột này → KHÔNG dùng @Transient
+    @Column(name = "Subtotal", nullable = false, precision = 18, scale = 2)
+    private BigDecimal subtotal;
 
     // ── Relationships ────────────────────────────────────────────────────────
 
