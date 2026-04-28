@@ -20,7 +20,7 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
 
     // ── Lấy theo userId ──────────────────────────────────────────────────────
 
-    Page<Order> findByUserUserIdOrderByCreatedAtDesc(Integer userId, Pageable pageable);
+    Page<Order> findByUserUserId(Integer userId, Pageable pageable);
 
     List<Order> findByUserUserIdOrderByCreatedAtDesc(Integer userId);
 
@@ -28,26 +28,23 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
 
     List<Order> findByUserUserIdAndStatus(Integer userId, OrderStatus status);
 
-    // ── Lấy theo trạng thái (Admin quản lý) ──────────────────────────────────
+    // ── Lấy theo trạng thái Admin quản lý ────────────────────────────────────
 
-    Page<Order> findByStatusOrderByCreatedAtDesc(OrderStatus status, Pageable pageable);
+    Page<Order> findByStatus(OrderStatus status, Pageable pageable);
 
     // ── Lấy theo trạng thái thanh toán ───────────────────────────────────────
 
     Page<Order> findByPaymentStatus(PaymentStatus paymentStatus, Pageable pageable);
 
-    // ── Lấy order kèm OrderDetails + Product (tránh N+1) ─────────────────────
+    // ── Lấy order kèm OrderDetails + Product tránh N+1 ───────────────────────
 
     @Query("""
-        SELECT o FROM Order o
+        SELECT DISTINCT o FROM Order o
         LEFT JOIN FETCH o.orderDetails od
         LEFT JOIN FETCH od.product p
         WHERE o.orderId = :orderId
         """)
     Optional<Order> findByIdWithDetails(@Param("orderId") Integer orderId);
-
-    // ── Kiểm tra user có đơn DELIVERED trước ngày cutoff không ───────────────
-    // Dùng để xét điều kiện nâng cấp LOYAL_CUSTOMER
 
     @Query("""
         SELECT COUNT(o) > 0 FROM Order o
@@ -59,11 +56,7 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
             @Param("userId") Integer userId,
             @Param("cutoff") LocalDateTime cutoff);
 
-    // ── Đếm tổng đơn theo trạng thái (Dashboard Admin) ───────────────────────
-
     long countByStatus(OrderStatus status);
-
-    // ── Tổng doanh thu theo khoảng thời gian ─────────────────────────────────
 
     @Query("""
         SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o
@@ -72,34 +65,28 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
         """)
     BigDecimal sumRevenueByDateRange(
             @Param("from") LocalDateTime from,
-            @Param("to")   LocalDateTime to);
-
-    // ── Đơn hàng theo khoảng thời gian ───────────────────────────────────────
+            @Param("to") LocalDateTime to);
 
     @Query("""
         SELECT o FROM Order o
         WHERE o.createdAt BETWEEN :from AND :to
-        ORDER BY o.createdAt DESC
         """)
     Page<Order> findByDateRange(
             @Param("from") LocalDateTime from,
-            @Param("to")   LocalDateTime to,
+            @Param("to") LocalDateTime to,
             Pageable pageable);
-
-    // ── Lọc đơn hàng kết hợp (Admin filter) ──────────────────────────────────
 
     @Query("""
         SELECT o FROM Order o
-        WHERE (:userId   IS NULL OR o.user.userId = :userId)
-          AND (:status   IS NULL OR o.status = :status)
+        WHERE (:userId IS NULL OR o.user.userId = :userId)
+          AND (:status IS NULL OR o.status = :status)
           AND (:fromDate IS NULL OR o.createdAt >= :fromDate)
-          AND (:toDate   IS NULL OR o.createdAt <= :toDate)
-        ORDER BY o.createdAt DESC
+          AND (:toDate IS NULL OR o.createdAt <= :toDate)
         """)
     Page<Order> findWithFilters(
-            @Param("userId")   Integer userId,
-            @Param("status")   OrderStatus status,
+            @Param("userId") Integer userId,
+            @Param("status") OrderStatus status,
             @Param("fromDate") LocalDateTime fromDate,
-            @Param("toDate")   LocalDateTime toDate,
+            @Param("toDate") LocalDateTime toDate,
             Pageable pageable);
 }

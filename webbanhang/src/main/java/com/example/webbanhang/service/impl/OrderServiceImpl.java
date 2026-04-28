@@ -212,7 +212,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional(readOnly = true)
     public PageResponse<OrderSummaryResponse> getMyOrders(Integer userId, Pageable pageable) {
-        Page<Order> page = orderRepository.findByUserUserIdOrderByCreatedAtDesc(userId, pageable);
+        Page<Order> page = orderRepository.findByUserUserId(userId, pageable);
 
         List<OrderSummaryResponse> content = page.getContent()
                 .stream()
