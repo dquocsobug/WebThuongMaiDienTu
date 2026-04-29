@@ -7,33 +7,51 @@ const axiosClient = axios.create({
   },
 });
 
-// Request interceptor - attach JWT token
+// Gắn JWT token vào request
 axiosClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-// Response interceptor - unwrap data.data, handle 401
+// Xử lý response
 axiosClient.interceptors.response.use(
   (response) => {
-    // Unwrap: response.data is { success, message, data, timestamp }
-    return response.data;
+    const body = response.data;
+
+    // Backend trả dạng ApiResponse: { success, message, data, timestamp }
+    if (body && typeof body === "object" && "data" in body) {
+      return body.data;
+    }
+
+    return body;
   },
   (error) => {
-    if (error.response?.status === 401) {
+    const status = error.response?.status;
+
+    if (status === 401) {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
-      window.location.href = "/login";
+
+      if (window.location.pathname !== "/login") {
+        window.location.href = "/login";
+      }
     }
+
     const message =
-      error.response?.data?.message || "Đã xảy ra lỗi. Vui lòng thử lại.";
-    return Promise.reject(new Error(message));
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      "Đã xảy ra lỗi. Vui lòng thử lại.";
+
+    return Promise.reject(new Error(String(message)));
   }
 );
 

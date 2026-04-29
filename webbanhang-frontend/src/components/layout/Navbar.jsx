@@ -159,7 +159,7 @@ const Navbar = () => {
         🚚 Miễn phí vận chuyển cho đơn từ 500.000₫ &nbsp;|&nbsp; 📞 Hotline: 1800 xxxx
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-4">
+      <div className="max-w-[1600px] mx-auto px-6 xl:px-10 h-16 flex items-center gap-4">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 shrink-0">
           <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">

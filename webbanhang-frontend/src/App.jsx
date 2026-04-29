@@ -2,6 +2,7 @@ import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
 import AppRouter from "./routes/AppRouter";
+import "./App.css";
 
 function App() {
   return (

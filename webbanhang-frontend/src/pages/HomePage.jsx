@@ -3,23 +3,33 @@ import { Link } from "react-router-dom";
 import { postApi, productApi, promotionApi } from "../api";
 import { formatVND } from "../utils/format";
 import { useCart } from "../context/CartContext";
+import styles from "./HomePage.module.css";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const imgFallback = (e) =>
-  (e.target.src = "https://placehold.co/800x500/f1f5f9/94a3b8?text=TechStore");
-const productImgFallback = (e) =>
-  (e.target.src = "https://placehold.co/400x400/f8fafc/94a3b8?text=Product");
+  (e.target.src = "https://placehold.co/900x560/f1f5f9/94a3b8?text=TechStore");
 
-function useReveal(options = {}) {
+const productImgFallback = (e) =>
+  (e.target.src = "https://placehold.co/400x400/f8f9fa/94a3b8?text=No+Image");
+
+/**
+ * Scroll-reveal hook — element fades in once it enters viewport.
+ */
+function useReveal() {
   const ref = useRef(null);
   const [visible, setVisible] = useState(false);
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
     const obs = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) { setVisible(true); obs.disconnect(); } },
-      { threshold: 0.1, ...options }
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          obs.disconnect();
+        }
+      },
+      { threshold: 0.1 }
     );
     obs.observe(el);
     return () => obs.disconnect();
@@ -27,165 +37,239 @@ function useReveal(options = {}) {
   return [ref, visible];
 }
 
-// ─── Mock data (shown while real API loads) ───────────────────────────────────
+// ─── Mock data — hiển thị ngay khi API chưa trả về ───────────────────────────
+// Cấu trúc theo đúng response backend thực tế
 
 const MOCK_POSTS = [
   {
-    postId: 1, category: "Review",
-    title: "Top 5 điện thoại đáng mua nhất năm 2026",
-    summary: "Thị trường smartphone 2026 bùng nổ với loạt flagship mới. Chúng tôi đã test kỹ và chọn ra 5 cái tên xứng đáng với từng đồng tiền bạn bỏ ra.",
-    mainImageUrl: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=900&q=80",
-    commentCount: 48,
-  },
-  {
-    postId: 2, category: "So sánh",
-    title: "MacBook Air M4 vs Dell XPS 15: Ai dành cho ai?",
-    summary: "Hai đối thủ đỉnh nhất phân khúc ultrabook đối đầu trực tiếp. Hiệu năng, pin, màn hình — không có câu trả lời dễ dàng.",
-    mainImageUrl: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=900&q=80",
-    commentCount: 31,
-  },
-  {
-    postId: 3, category: "Hướng dẫn",
-    title: "Tai nghe không dây tốt nhất dưới 2 triệu 2026",
-    summary: "Bạn không cần chi cả chục triệu để có âm thanh tốt. 8 mẫu tai nghe này sẽ thay đổi suy nghĩ của bạn.",
+    postId: 1,
+    title: "Top tai nghe tốt nhất 2026",
+    summary: "Danh sách tai nghe nổi bật năm 2026 dành cho sinh viên và dân văn phòng.",
     mainImageUrl: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=900&q=80",
+    commentCount: 48,
+    author: { userId: 1, fullName: "Quản trị viên", email: "admin@gmail.com" },
+    status: "APPROVED",
+  },
+  {
+    postId: 2,
+    title: "Review AirPods Pro 2 sau 1 tháng sử dụng",
+    summary: "Trải nghiệm thực tế sau khi dùng AirPods Pro 2 trong học tập và giải trí.",
+    mainImageUrl: "https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=900&q=80",
+    commentCount: 31,
+    author: { userId: 2, fullName: "Nguyễn Văn A", email: "user1@gmail.com" },
+    status: "APPROVED",
+  },
+  {
+    postId: 3,
+    title: "Sony WH-1000XM5 có còn đáng mua?",
+    summary: "Sau 2 năm ra mắt, chiếc tai nghe flagship của Sony vẫn giữ ngôi vương phân khúc chống ồn.",
+    mainImageUrl: "https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=900&q=80",
     commentCount: 22,
+    author: { userId: 1, fullName: "Quản trị viên", email: "admin@gmail.com" },
+    status: "APPROVED",
   },
   {
-    postId: 4, category: "Hướng dẫn",
-    title: "Cách chọn màn hình gaming: Những điều ai cũng bỏ qua",
-    summary: "Hz cao không phải tất cả. Response time, panel type, HDR thực sự — những yếu tố quyết định trải nghiệm chơi game.",
-    mainImageUrl: "https://images.unsplash.com/photo-1593640408182-31c228c71e7f?w=900&q=80",
+    postId: 4,
+    title: "So sánh tai nghe có dây vs không dây 2026",
+    summary: "Latency, chất âm, tiện lợi — bên nào thắng trong cuộc chiến năm 2026?",
+    mainImageUrl: "https://images.unsplash.com/photo-1484704849700-f032a568e944?w=900&q=80",
     commentCount: 17,
+    author: { userId: 1, fullName: "Quản trị viên", email: "admin@gmail.com" },
+    status: "APPROVED",
   },
   {
-    postId: 5, category: "Tin tức",
-    title: "Samsung Galaxy S25 Ultra ra mắt: Những gì thay đổi",
-    summary: "Màn hình mới, S Pen cải tiến, và con chip mạnh nhất từ trước đến nay. Samsung có làm hài lòng fan trung thành?",
-    mainImageUrl: "https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=900&q=80",
+    postId: 5,
+    title: "Hướng dẫn chọn tai nghe theo nhu cầu",
+    summary: "Gaming, nhạc studio, hay commute hàng ngày — mỗi use case cần một loại tai nghe khác nhau.",
+    mainImageUrl: "https://images.unsplash.com/photo-1524678606370-a47ad25cb82a?w=900&q=80",
     commentCount: 63,
+    author: { userId: 2, fullName: "Nguyễn Văn A", email: "user1@gmail.com" },
+    status: "APPROVED",
   },
 ];
 
 const MOCK_PRODUCTS = [
   {
-    productId: 1, categoryName: "Điện thoại",
-    productName: "iPhone 16 Pro Max 256GB",
-    price: 34990000, discountedPrice: 31990000, discountPercent: 9,
-    mainImageUrl: "https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=500&q=80",
-    averageRating: 4.8, reviewCount: 124,
+    productId: 1,
+    productName: "AirPods Pro 2",
+    description: "Tai nghe chống ồn cao cấp của Apple",
+    price: 5500000,
+    discountedPrice: 4950000,
+    discountPercent: 10,
+    stock: 50,
+    categoryId: 1,
+    categoryName: "Tai nghe",
+    mainImageUrl: "https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=500&q=80",
+    averageRating: 5.0,
+    reviewCount: 1,
   },
   {
-    productId: 2, categoryName: "Laptop",
-    productName: 'MacBook Air 13" M4 8GB',
-    price: 29990000, discountedPrice: 27990000, discountPercent: 7,
-    mainImageUrl: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=500&q=80",
-    averageRating: 4.9, reviewCount: 87,
-  },
-  {
-    productId: 3, categoryName: "Tai nghe",
-    productName: "Sony WH-1000XM6",
-    price: 8990000, discountedPrice: 7490000, discountPercent: 17,
+    productId: 2,
+    productName: "Sony WH-1000XM5",
+    description: "Tai nghe chống ồn cao cấp của Sony",
+    price: 8000000,
+    discountedPrice: 6400000,
+    discountPercent: 20,
+    stock: 30,
+    categoryId: 1,
+    categoryName: "Tai nghe",
     mainImageUrl: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80",
-    averageRating: 4.7, reviewCount: 56,
+    averageRating: 4.0,
+    reviewCount: 1,
   },
   {
-    productId: 4, categoryName: "Máy tính bảng",
-    productName: "Samsung Galaxy Tab S10+",
-    price: 22990000, discountedPrice: 19990000, discountPercent: 13,
-    mainImageUrl: "https://images.unsplash.com/photo-1561154464-82e9adf32764?w=500&q=80",
-    averageRating: 4.6, reviewCount: 43,
+    productId: 3,
+    productName: "Sạc nhanh 20W",
+    description: "Sạc nhanh chính hãng chuẩn PD",
+    price: 300000,
+    discountedPrice: null,
+    discountPercent: 0,
+    stock: 100,
+    categoryId: 3,
+    categoryName: "Phụ kiện",
+    mainImageUrl: "https://images.unsplash.com/photo-1583394838336-acd977736f90?w=500&q=80",
+    averageRating: 4.5,
+    reviewCount: 8,
+  },
+  {
+    productId: 4,
+    productName: "Cáp USB-C to Lightning 1m",
+    description: "Cáp sạc chính hãng, hỗ trợ sạc nhanh 20W",
+    price: 450000,
+    discountedPrice: 390000,
+    discountPercent: 13,
+    stock: 200,
+    categoryId: 3,
+    categoryName: "Phụ kiện",
+    mainImageUrl: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=500&q=80",
+    averageRating: 4.3,
+    reviewCount: 5,
   },
 ];
 
 // ─── Micro components ─────────────────────────────────────────────────────────
 
 const Tag = ({ label }) => (
-  <span className="inline-block text-[11px] font-bold tracking-widest uppercase px-2.5 py-0.5 rounded-md bg-blue-50 text-blue-600 border border-blue-100">
-    {label}
-  </span>
+  <span className={styles.tag}>{label}</span>
 );
 
 const Stars = ({ rating = 0, count }) => (
-  <div className="flex items-center gap-1">
-    <div className="flex gap-0.5">
-      {[1,2,3,4,5].map(i => (
-        <svg key={i} className={`w-3 h-3 ${i <= Math.round(rating) ? "text-amber-400" : "text-gray-200"}`} fill="currentColor" viewBox="0 0 20 20">
+  <div className={styles.stars}>
+    <div className={styles.starRow}>
+      {[1, 2, 3, 4, 5].map((i) => (
+        <svg
+          key={i}
+          className={styles.star}
+          fill={i <= Math.round(rating) ? "#fbbf24" : "#e2e8f0"}
+          viewBox="0 0 20 20"
+        >
           <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
         </svg>
       ))}
     </div>
-    {count !== undefined && <span className="text-xs text-gray-400">({count})</span>}
+    {count !== undefined && (
+      <span className={styles.starCount}>({count})</span>
+    )}
   </div>
 );
 
-const Arrow = ({ className = "" }) => (
-  <svg className={`w-4 h-4 ${className}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+const ArrowIcon = ({ className = "" }) => (
+  <svg
+    className={className}
+    width="16"
+    height="16"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={2}
+  >
     <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
   </svg>
 );
 
-// ─── 1. HERO BANNER ───────────────────────────────────────────────────────────
+// ─── 1. PROMO BAR ─────────────────────────────────────────────────────────────
+// Backend: GET /promotions/active → data = [{ promotionId, promotionName, discountPercent, ... }]
+
+const PromoBanner = ({ promotions }) => {
+  if (!promotions?.length) return null;
+  // Hiển thị promotion đầu tiên đang active
+  const promo = promotions[0];
+  return (
+    <div className={styles.promoBar}>
+      <div className={styles.promoBarLeft}>
+        <div className={styles.promoIcon}>🎁</div>
+        <div>
+          <p className={styles.promoName}>{promo.promotionName}</p>
+          <p className={styles.promoSub}>
+            Giảm đến {promo.discountPercent}% · Số lượng có hạn
+          </p>
+        </div>
+      </div>
+      <Link to="/promotions" className={styles.promoBtn}>
+        Xem ưu đãi →
+      </Link>
+    </div>
+  );
+};
+
+// ─── 2. HERO BANNER ───────────────────────────────────────────────────────────
+// Backend: GET /posts → data.content[0] — dùng bài đầu tiên làm hero
+// Fields: postId, title, summary, mainImageUrl, commentCount
 
 const HeroBanner = ({ post }) => {
   const [ref, visible] = useReveal();
   if (!post) return null;
   return (
-    <section ref={ref} className="relative overflow-hidden bg-[#0a0a0a]">
-      {/* Background */}
-      <div className="absolute inset-0">
-        <img src={post.mainImageUrl} alt="" onError={imgFallback}
-          className="w-full h-full object-cover opacity-35" />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0a0a0a] via-[#0a0a0a]/75 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a]/60 via-transparent to-transparent" />
+    <section className={styles.hero}>
+      {/* Ảnh nền */}
+      <div className={styles.heroBg}>
+        <img
+          src={post.mainImageUrl}
+          alt=""
+          onError={imgFallback}
+          className={styles.heroBgImg}
+        />
+        <div className={styles.heroOverlayH} />
+        <div className={styles.heroOverlayV} />
       </div>
+      {/* Lưới trang trí */}
+      <div className={styles.heroGrid} />
 
-      {/* Grid lines decoration */}
-      <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
-        style={{ backgroundImage: "linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)", backgroundSize: "60px 60px" }} />
-
-      <div className="relative max-w-7xl mx-auto px-6 sm:px-8 py-24 sm:py-32">
+      <div className={styles.heroInner}>
         <div
-          className={`max-w-2xl transition-all duration-1000 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}
+          ref={ref}
+          className={`${styles.heroContent} ${visible ? styles.visible : styles.hidden}`}
         >
-          <div className="flex items-center gap-3 mb-5">
-            <Tag label={post.category || "Nổi bật"} />
-            <span className="text-gray-500 text-xs tracking-wide">• Bài viết của tuần</span>
+          <div className={styles.heroMeta}>
+            <Tag label="Nổi bật" />
+            <span className={styles.heroMetaDot}>• Bài viết của tuần</span>
           </div>
 
-          <h1
-            className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-5 leading-[1.1]"
-            style={{ fontFamily: "'Georgia', 'Times New Roman', serif", letterSpacing: "-0.025em" }}
-          >
-            {post.title}
-          </h1>
+          <h1 className={styles.heroTitle}>{post.title}</h1>
 
-          <p className="text-gray-300 text-lg leading-relaxed mb-8 max-w-lg">
-            {post.summary}
-          </p>
+          <p className={styles.heroSummary}>{post.summary}</p>
 
-          <div className="flex items-center gap-4">
-            <Link to={`/posts/${post.postId}`}
-              className="inline-flex items-center gap-2 bg-white text-[#0a0a0a] px-7 py-3.5 rounded-full font-semibold text-sm hover:bg-gray-100 transition-all shadow-xl"
-            >
-              Đọc ngay <Arrow />
+          <div className={styles.heroActions}>
+            <Link to={`/posts/${post.postId}`} className={styles.heroCta}>
+              Đọc ngay <ArrowIcon />
             </Link>
-            <span className="text-gray-400 text-sm flex items-center gap-1.5">
+            <span className={styles.heroComments}>
               💬 {post.commentCount} bình luận
             </span>
           </div>
         </div>
       </div>
 
-      {/* Bottom fade */}
-      <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white to-transparent" />
+      <div className={styles.heroFade} />
     </section>
   );
 };
 
-// ─── 2. FEATURED POSTS SECTION ────────────────────────────────────────────────
+// ─── 3. FEATURED POSTS ────────────────────────────────────────────────────────
+// Backend: GET /posts?page=0&size=8 → data.content[]
+// Fields: postId, title, summary, mainImageUrl, commentCount, author
 
-const CATEGORIES = [
+const POST_CATEGORIES = [
   { label: "Tất cả", icon: "✦" },
   { label: "Review", icon: "⭐" },
   { label: "So sánh", icon: "⚖️" },
@@ -193,84 +277,103 @@ const CATEGORIES = [
   { label: "Tin tức", icon: "📡" },
 ];
 
+// Backend không trả category field riêng — tự classify từ title (hoặc thêm tag sau)
+// Hiện tại để "Tất cả" luôn hiển thị đủ; filter chỉ active khi có data thực
+const guessCategory = (post) => {
+  const t = post.title?.toLowerCase() || "";
+  if (t.includes("so sánh") || t.includes("vs")) return "So sánh";
+  if (t.includes("hướng dẫn") || t.includes("cách chọn") || t.includes("cách")) return "Hướng dẫn";
+  if (t.includes("review") || t.includes("trải nghiệm") || t.includes("tháng")) return "Review";
+  if (t.includes("ra mắt") || t.includes("mới") || t.includes("top")) return "Tin tức";
+  return "Review";
+};
+
 const FeaturedPosts = ({ posts }) => {
   const [active, setActive] = useState("Tất cả");
-  const filtered = active === "Tất cả" ? posts : posts.filter(p => p.category === active);
+
+  // Gắn category tạm từ title nếu backend chưa trả category field
+  const postsWithCat = posts.map((p) => ({
+    ...p,
+    _cat: p.category || guessCategory(p),
+  }));
+
+  const filtered =
+    active === "Tất cả"
+      ? postsWithCat
+      : postsWithCat.filter((p) => p._cat === active);
+
   const [hero, ...rest] = filtered;
 
   return (
-    <section className="py-20 bg-white">
-      <div className="max-w-7xl mx-auto px-6 sm:px-8">
+    <section className={`${styles.section} ${styles.sectionWhite}`}>
+      <div className={styles.container}>
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+        <div className={styles.sectionHead}>
           <div>
-            <p className="text-xs font-bold tracking-widest uppercase text-blue-500 mb-1.5">Khám phá</p>
-            <h2 className="text-3xl font-bold text-gray-900" style={{ fontFamily: "'Georgia', serif", letterSpacing: "-0.02em" }}>
-              Bài viết công nghệ nổi bật
-            </h2>
+            <p className={styles.eyebrow}>Khám phá</p>
+            <h2 className={styles.sectionTitle}>Bài viết công nghệ nổi bật</h2>
           </div>
-          <Link to="/posts" className="group flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 font-medium transition-colors">
-            Xem tất cả <Arrow className="group-hover:translate-x-1 transition-transform" />
+          <Link to="/posts" className={styles.seeAll}>
+            Xem tất cả{" "}
+            <ArrowIcon className={styles.seeAllArrow} />
           </Link>
         </div>
 
         {/* Filter pills */}
-        <div className="flex gap-2 overflow-x-auto pb-3 mb-8 [-webkit-overflow-scrolling:touch]">
-          {CATEGORIES.map(c => (
-            <button key={c.label} onClick={() => setActive(c.label)}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
-                active === c.label
-                  ? "bg-gray-900 text-white shadow-sm"
-                  : "bg-white text-gray-600 border border-gray-200 hover:border-gray-400 hover:text-gray-900"
-              }`}
+        <div className={styles.pillRow}>
+          {POST_CATEGORIES.map((c) => (
+            <button
+              key={c.label}
+              onClick={() => setActive(c.label)}
+              className={`${styles.pill} ${active === c.label ? styles.pillActive : ""}`}
             >
               {c.icon} {c.label}
             </button>
           ))}
         </div>
 
-        {/* Layout: big left + list right */}
+        {/* Grid: big card trái + list nhỏ phải */}
         {hero && (
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          <div className={styles.featuredGrid}>
             {/* Big card */}
-            <Link to={`/posts/${hero.postId}`}
-              className="group lg:col-span-3 relative overflow-hidden rounded-2xl bg-gray-100 block"
-            >
-              <div className="aspect-[16/10] overflow-hidden">
-                <img src={hero.mainImageUrl} alt={hero.title} onError={imgFallback}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+            <Link to={`/posts/${hero.postId}`} className={styles.bigCard}>
+              <div className={styles.bigCardImg}>
+                <img
+                  src={hero.mainImageUrl}
+                  alt={hero.title}
+                  onError={imgFallback}
+                />
               </div>
-              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent rounded-2xl" />
-              <div className="absolute bottom-0 left-0 right-0 p-6">
-                <Tag label={hero.category || "Bài viết"} />
-                <h3 className="text-white font-bold text-xl sm:text-2xl mt-2 leading-snug line-clamp-2 group-hover:text-blue-200 transition-colors"
-                  style={{ fontFamily: "'Georgia', serif" }}>
-                  {hero.title}
-                </h3>
-                <p className="text-gray-300 text-sm mt-1.5 line-clamp-2">{hero.summary}</p>
-                <div className="flex items-center gap-2 mt-3 text-gray-300 text-xs">
-                  💬 {hero.commentCount} bình luận
-                </div>
+              <div className={styles.bigCardOverlay} />
+              <div className={styles.bigCardBody}>
+                <Tag label={hero._cat} />
+                <h3 className={styles.bigCardTitle}>{hero.title}</h3>
+                <p className={styles.bigCardSummary}>{hero.summary}</p>
+                <p className={styles.bigCardMeta}>💬 {hero.commentCount} bình luận</p>
               </div>
             </Link>
 
-            {/* Stacked list */}
-            <div className="lg:col-span-2 divide-y divide-gray-100">
+            {/* List nhỏ */}
+            <div className={styles.smallList}>
               {rest.slice(0, 4).map((post) => (
-                <Link key={post.postId} to={`/posts/${post.postId}`}
-                  className="group flex gap-4 items-start py-4 first:pt-0 hover:bg-gray-50 -mx-3 px-3 rounded-xl transition-colors"
+                <Link
+                  key={post.postId}
+                  to={`/posts/${post.postId}`}
+                  className={styles.smallItem}
                 >
-                  <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
-                    <img src={post.mainImageUrl} alt={post.title} onError={imgFallback}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                  <div className={styles.smallThumb}>
+                    <img
+                      src={post.mainImageUrl}
+                      alt={post.title}
+                      onError={imgFallback}
+                    />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <Tag label={post.category || "Bài viết"} />
-                    <h4 className="text-gray-900 font-semibold text-sm mt-1.5 line-clamp-2 group-hover:text-blue-600 transition-colors leading-snug"
-                      style={{ fontFamily: "'Georgia', serif" }}>
-                      {post.title}
-                    </h4>
-                    <span className="text-gray-400 text-xs mt-1 block">💬 {post.commentCount}</span>
+                  <div className={styles.smallMeta}>
+                    <Tag label={post._cat} />
+                    <h4 className={styles.smallTitle}>{post.title}</h4>
+                    <span className={styles.smallComments}>
+                      💬 {post.commentCount}
+                    </span>
                   </div>
                 </Link>
               ))}
@@ -282,7 +385,10 @@ const FeaturedPosts = ({ posts }) => {
   );
 };
 
-// ─── 3. PRODUCT CARD ─────────────────────────────────────────────────────────
+// ─── 4. PRODUCT CARD ─────────────────────────────────────────────────────────
+// Backend: GET /products?page=0&size=4 → data.content[]
+// Fields: productId, productName, price, discountedPrice, discountPercent,
+//         stock, categoryName, mainImageUrl, averageRating, reviewCount
 
 const ProductCard = ({ product, delay = 0 }) => {
   const { addToCart } = useCart();
@@ -296,152 +402,187 @@ const ProductCard = ({ product, delay = 0 }) => {
     setAdding(false);
   };
 
+  // discountedPrice có thể null nếu không giảm giá
+  const displayPrice = product.discountedPrice ?? product.price;
+  const hasDiscount =
+    product.discountPercent > 0 &&
+    product.discountedPrice != null &&
+    product.discountedPrice < product.price;
+
   return (
     <div
       ref={ref}
-      className={`group bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-xl hover:border-gray-200 transition-all duration-500 ${
-        visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-      }`}
+      className={`${styles.productCard} ${visible ? styles.visible : styles.hidden}`}
       style={{ transitionDelay: `${delay}ms` }}
     >
       <Link to={`/products/${product.productId}`}>
-        <div className="relative bg-[#f8f9fa] aspect-square overflow-hidden">
-          <img src={product.mainImageUrl} alt={product.productName} onError={productImgFallback}
-            className="w-full h-full object-contain p-8 group-hover:scale-105 transition-transform duration-500" />
-          {product.discountPercent > 0 && (
-            <span className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+        {/* Ảnh */}
+        <div className={styles.productImgWrap}>
+          <img
+            src={product.mainImageUrl}
+            alt={product.productName}
+            onError={productImgFallback}
+            className={styles.productImg}
+          />
+          {hasDiscount && (
+            <span className={styles.discountBadge}>
               -{product.discountPercent}%
             </span>
           )}
-          <span className="absolute top-3 right-3 text-[10px] font-semibold text-gray-500 bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded-full border border-gray-100">
-            {product.categoryName}
-          </span>
+          <span className={styles.categoryBadge}>{product.categoryName}</span>
         </div>
-        <div className="p-4 pb-3">
-          <h4 className="text-gray-900 font-semibold text-sm leading-snug line-clamp-2 mb-2 group-hover:text-blue-600 transition-colors">
-            {product.productName}
-          </h4>
+
+        {/* Nội dung */}
+        <div className={styles.productBody}>
+          <p className={styles.productName}>{product.productName}</p>
           <Stars rating={product.averageRating} count={product.reviewCount} />
-          <div className="mt-3 flex items-end justify-between">
-            <div>
-              <p className="text-gray-900 font-bold text-base">{formatVND(product.discountedPrice || product.price)}</p>
-              {product.discountedPrice && product.discountedPrice < product.price && (
-                <p className="text-gray-400 text-xs line-through">{formatVND(product.price)}</p>
-              )}
-            </div>
+          <div className={styles.priceRow}>
+            <span className={styles.priceMain}>{formatVND(displayPrice)}</span>
+            {hasDiscount && (
+              <span className={styles.priceOld}>{formatVND(product.price)}</span>
+            )}
           </div>
         </div>
       </Link>
-      <div className="px-4 pb-4">
-        <button onClick={handleAdd} disabled={adding}
-          className="w-full flex items-center justify-center gap-2 bg-gray-900 hover:bg-gray-700 text-white text-sm font-medium py-2.5 rounded-xl transition-all duration-200 disabled:opacity-60"
+
+      {/* Thêm giỏ */}
+      <div className={styles.productFoot}>
+        <button
+          onClick={handleAdd}
+          disabled={adding}
+          className={styles.addBtn}
         >
-          {adding
-            ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            : <><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-1.5 6M17 13l1.5 6M9 19a1 1 0 100 2 1 1 0 000-2zm8 0a1 1 0 100 2 1 1 0 000-2z" /></svg> Thêm vào giỏ</>
-          }
+          {adding ? (
+            <span className={styles.spinner} />
+          ) : (
+            <>
+              <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-1.5 6M17 13l1.5 6M9 19a1 1 0 100 2 1 1 0 000-2zm8 0a1 1 0 100 2 1 1 0 000-2z" />
+              </svg>
+              Thêm vào giỏ
+            </>
+          )}
         </button>
       </div>
     </div>
   );
 };
 
-// ─── 4. REVIEW SECTION (products embedded in content) ─────────────────────────
+// ─── 5. REVIEWS SECTION ──────────────────────────────────────────────────────
+// Hiển thị sản phẩm lồng ghép trong editorial context
 
 const ReviewsSection = ({ products }) => (
-  <section className="py-20 bg-[#f8f9fa]">
-    <div className="max-w-7xl mx-auto px-6 sm:px-8">
-      <div className="max-w-2xl mb-10">
-        <p className="text-xs font-bold tracking-widest uppercase text-blue-500 mb-2">Đã kiểm chứng</p>
-        <h2 className="text-3xl font-bold text-gray-900 mb-3" style={{ fontFamily: "'Georgia', serif", letterSpacing: "-0.02em" }}>
-          Chúng tôi đã dùng thử cho bạn
-        </h2>
-        <p className="text-gray-500 text-base leading-relaxed">
-          Mỗi sản phẩm được đội ngũ biên tập trải nghiệm ít nhất 2 tuần trước khi kết luận.
-          Không quảng cáo, không thiên vị.
-        </p>
+  <section className={`${styles.section} ${styles.sectionBg}`}>
+    <div className={styles.container}>
+      <div className={styles.sectionHead}>
+        <div>
+          <p className={styles.eyebrow}>Đã kiểm chứng</p>
+          <h2 className={styles.sectionTitle}>Chúng tôi đã dùng thử cho bạn</h2>
+          <p className={styles.sectionDesc}>
+            Mỗi sản phẩm được đội ngũ biên tập trải nghiệm ít nhất 2 tuần.
+            Không quảng cáo, không thiên vị.
+          </p>
+        </div>
+        <Link to="/products" className={styles.seeAll}>
+          Xem tất cả <ArrowIcon className={styles.seeAllArrow} />
+        </Link>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        {products.map((p, i) => <ProductCard key={p.productId} product={p} delay={i * 80} />)}
+      <div className={styles.productGrid}>
+        {products.map((p, i) => (
+          <ProductCard key={p.productId} product={p} delay={i * 80} />
+        ))}
       </div>
 
-      <div className="text-center mt-10">
-        <Link to="/products"
-          className="inline-flex items-center gap-2 border border-gray-300 text-gray-700 hover:border-gray-900 hover:text-gray-900 px-6 py-3 rounded-full text-sm font-medium transition-all duration-200"
-        >
-          Xem tất cả sản phẩm <Arrow />
+      <div className={styles.viewAllWrap}>
+        <Link to="/products" className={styles.viewAllBtn}>
+          Xem tất cả sản phẩm <ArrowIcon />
         </Link>
       </div>
     </div>
   </section>
 );
 
-// ─── 5. EDITORIAL BRIDGE (content × product crossover) ────────────────────────
+// ─── 6. EDITORIAL BRIDGE ─────────────────────────────────────────────────────
+// Cầu nối nội dung ↔ hành động: bài viết tư vấn + stats + newsletter
 
-const EditorialBridge = () => {
+const EditorialBridge = ({ posts }) => {
   const [ref, visible] = useReveal();
+  // Lấy bài thứ 2 (index 1) làm editorial CTA nếu có
+  const ctaPost = posts?.[1];
+
   return (
-    <section ref={ref} className={`py-20 bg-white transition-all duration-700 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
-      <div className="max-w-7xl mx-auto px-6 sm:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
-
-          {/* Left: editorial card */}
-          <Link to="/posts/1"
-            className="group relative overflow-hidden rounded-2xl bg-gray-950 p-8 sm:p-10 flex flex-col justify-between min-h-[320px]"
-          >
-            <div className="absolute inset-0 opacity-20">
-              <img src="https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&q=60"
-                alt="" className="w-full h-full object-cover" />
-            </div>
-            <div className="relative">
-              <Tag label="Hướng dẫn mua" />
-              <h3 className="text-white text-2xl font-bold mt-4 mb-3 leading-snug group-hover:text-blue-300 transition-colors"
-                style={{ fontFamily: "'Georgia', serif" }}>
-                Chọn laptop đầu tiên: Đừng nhìn vào giá
-              </h3>
-              <p className="text-gray-400 text-sm leading-relaxed">
-                RAM, CPU, màn hình — thứ tự ưu tiên thực sự khi mua laptop cho sinh viên và người đi làm năm 2026.
-              </p>
-            </div>
-            <div className="relative flex items-center gap-2 mt-6 text-blue-400 text-sm font-medium">
-              Đọc bài viết <Arrow className="group-hover:translate-x-1 transition-transform" />
-            </div>
-          </Link>
-
-          {/* Right: stats + newsletter */}
-          <div className="flex flex-col gap-5">
-            {/* Trust stats */}
-            <div className="grid grid-cols-3 gap-4">
-              {[
-                { num: "200+", label: "Bài review" },
-                { num: "50k+", label: "Độc giả/tháng" },
-                { num: "98%", label: "Hài lòng" },
-              ].map(({ num, label }) => (
-                <div key={label} className="text-center p-5 bg-gray-50 rounded-2xl border border-gray-100">
-                  <p className="text-2xl font-black text-gray-900" style={{ fontFamily: "'Georgia', serif" }}>{num}</p>
-                  <p className="text-gray-400 text-xs mt-0.5">{label}</p>
-                </div>
-              ))}
-            </div>
-
-            {/* Newsletter */}
-            <div className="flex-1 bg-blue-600 rounded-2xl p-7 sm:p-8 flex flex-col justify-between">
-              <div>
-                <div className="text-2xl mb-3">📬</div>
-                <h3 className="text-white font-bold text-xl mb-2" style={{ fontFamily: "'Georgia', serif" }}>
-                  Bản tin công nghệ tuần
+    <section className={`${styles.section} ${styles.sectionWhite}`}>
+      <div className={styles.container}>
+        <div
+          ref={ref}
+          className={`${styles.bridgeReveal} ${visible ? styles.visible : styles.hidden}`}
+        >
+          <div className={styles.bridgeGrid}>
+            {/* Trái: editorial dark card */}
+            <Link
+              to={ctaPost ? `/posts/${ctaPost.postId}` : "/posts"}
+              className={styles.darkCard}
+            >
+              <div className={styles.darkCardBg}>
+                <img
+                  src="https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&q=60"
+                  alt=""
+                  onError={() => {}}
+                />
+              </div>
+              <div className={styles.darkCardContent}>
+                <Tag label="Hướng dẫn mua" />
+                <h3 className={styles.darkCardTitle}>
+                  {ctaPost?.title || "Hướng dẫn chọn sản phẩm phù hợp với nhu cầu"}
                 </h3>
-                <p className="text-blue-100 text-sm mb-5 leading-relaxed">
-                  Review mới, so sánh sâu, gợi ý mua hàng — mỗi tuần một lần, không spam.
+                <p className={styles.darkCardDesc}>
+                  {ctaPost?.summary ||
+                    "Đừng chỉ nhìn vào giá. Chúng tôi giúp bạn hiểu thứ thực sự quan trọng trước khi quyết định."}
                 </p>
               </div>
-              <div className="flex gap-2">
-                <input type="email" placeholder="email@của.bạn"
-                  className="flex-1 bg-blue-500/50 text-white placeholder-blue-300 text-sm px-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-white/40 transition border border-blue-400/30" />
-                <button className="bg-white text-blue-600 text-sm font-semibold px-5 py-3 rounded-xl hover:bg-blue-50 transition whitespace-nowrap">
-                  Đăng ký
-                </button>
+              <div className={styles.darkCardLink}>
+                Đọc bài viết{" "}
+                <ArrowIcon className={styles.darkCardLinkArrow} />
+              </div>
+            </Link>
+
+            {/* Phải: stats + newsletter */}
+            <div className={styles.bridgeRight}>
+              {/* Trust stats */}
+              <div className={styles.statsGrid}>
+                {[
+                  { num: "200+", label: "Bài review" },
+                  { num: "50k+", label: "Độc giả/tháng" },
+                  { num: "98%", label: "Hài lòng" },
+                ].map(({ num, label }) => (
+                  <div key={label} className={styles.statBox}>
+                    <p className={styles.statNum}>{num}</p>
+                    <p className={styles.statLabel}>{label}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Newsletter */}
+              <div className={styles.newsletter}>
+                <div>
+                  <div className={styles.newsletterEmoji}>📬</div>
+                  <h3 className={styles.newsletterTitle}>Bản tin công nghệ tuần</h3>
+                  <p className={styles.newsletterDesc}>
+                    Review mới, so sánh sâu, gợi ý mua hàng — mỗi tuần một lần,
+                    không spam.
+                  </p>
+                </div>
+                <div className={styles.newsletterForm}>
+                  <input
+                    type="email"
+                    placeholder="email@của.bạn"
+                    className={styles.newsletterInput}
+                  />
+                  <button type="button" className={styles.newsletterBtn}>
+                    Đăng ký
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -451,86 +592,71 @@ const EditorialBridge = () => {
   );
 };
 
-// ─── 6. SUGGESTION SECTION ────────────────────────────────────────────────────
+// ─── 7. SUGGESTION SECTION ───────────────────────────────────────────────────
+// Backend: dùng lại posts đã fetch, lấy slice [1..5]
+// Fields: postId, title, summary, mainImageUrl, commentCount
+
+const SuggestionCard = ({ post, delay }) => {
+  const [ref, visible] = useReveal();
+  return (
+    <Link
+      ref={ref}
+      to={`/posts/${post.postId}`}
+      className={`${styles.suggestionCard} ${visible ? styles.visible : styles.hidden}`}
+      style={{ transitionDelay: `${delay}ms` }}
+    >
+      <div className={styles.suggestionThumb}>
+        <img
+          src={post.mainImageUrl}
+          alt={post.title}
+          onError={imgFallback}
+        />
+      </div>
+      <div className={styles.suggestionBody}>
+        <Tag label={post._cat || guessCategory(post)} />
+        <h4 className={styles.suggestionTitle}>{post.title}</h4>
+        <p className={styles.suggestionSummary}>{post.summary}</p>
+        <div className={styles.suggestionFoot}>
+          <span className={styles.suggestionComments}>
+            💬 {post.commentCount}
+          </span>
+          <span className={styles.suggestionReadMore}>Đọc →</span>
+        </div>
+      </div>
+    </Link>
+  );
+};
 
 const SuggestionsSection = ({ posts }) => (
-  <section className="py-20 bg-[#f8f9fa] border-t border-gray-100">
-    <div className="max-w-7xl mx-auto px-6 sm:px-8">
-      <div className="flex items-end justify-between mb-8">
+  <section
+    className={`${styles.section} ${styles.sectionBg}`}
+    style={{ borderTop: "1px solid #f1f5f9" }}
+  >
+    <div className={styles.container}>
+      <div className={styles.sectionHead}>
         <div>
-          <p className="text-xs font-bold tracking-widest uppercase text-blue-500 mb-1.5">Dành riêng cho bạn</p>
-          <h2 className="text-3xl font-bold text-gray-900" style={{ fontFamily: "'Georgia', serif", letterSpacing: "-0.02em" }}>
-            Có thể bạn quan tâm
-          </h2>
+          <p className={styles.eyebrow}>Dành riêng cho bạn</p>
+          <h2 className={styles.sectionTitle}>Có thể bạn quan tâm</h2>
         </div>
-        <Link to="/posts" className="group flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 font-medium transition-colors">
-          Xem thêm <Arrow className="group-hover:translate-x-1 transition-transform" />
+        <Link to="/posts" className={styles.seeAll}>
+          Xem thêm <ArrowIcon className={styles.seeAllArrow} />
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {posts.map((post, i) => {
-          const [ref, visible] = useReveal();
-          return (
-            <Link
-              key={post.postId}
-              ref={ref}
-              to={`/posts/${post.postId}`}
-              className={`group bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg hover:border-gray-200 transition-all duration-500 ${
-                visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-              }`}
-              style={{ transitionDelay: `${i * 80}ms` }}
-            >
-              <div className="aspect-video overflow-hidden bg-gray-100">
-                <img src={post.mainImageUrl} alt={post.title} onError={imgFallback}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-              </div>
-              <div className="p-4">
-                <Tag label={post.category || "Công nghệ"} />
-                <h4 className="text-gray-900 font-semibold text-sm mt-2 line-clamp-2 group-hover:text-blue-600 transition-colors leading-snug"
-                  style={{ fontFamily: "'Georgia', serif" }}>
-                  {post.title}
-                </h4>
-                <p className="text-gray-400 text-xs mt-1.5 line-clamp-2">{post.summary}</p>
-                <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-50">
-                  <span className="text-xs text-gray-400">💬 {post.commentCount}</span>
-                  <span className="text-blue-500 text-xs font-medium group-hover:underline">Đọc →</span>
-                </div>
-              </div>
-            </Link>
-          );
-        })}
+      <div className={styles.suggestionGrid}>
+        {posts.map((post, i) => (
+          <SuggestionCard
+            key={post.postId}
+            post={post}
+            delay={i * 80}
+          />
+        ))}
       </div>
     </div>
   </section>
 );
 
-// ─── 7. PROMO BANNER ──────────────────────────────────────────────────────────
-
-const PromoBanner = ({ promotions }) => {
-  if (!promotions?.length) return null;
-  return (
-    <section className="bg-gray-900 border-t border-gray-800">
-      <div className="max-w-7xl mx-auto px-6 sm:px-8 py-5">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center flex-shrink-0 text-xl">🎁</div>
-            <div>
-              <p className="text-white font-semibold text-sm">{promotions[0].promotionName}</p>
-              <p className="text-gray-400 text-xs">Giảm đến {promotions[0].discountPercent}% · Số lượng có hạn</p>
-            </div>
-          </div>
-          <Link to="/promotions"
-            className="flex-shrink-0 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition">
-            Xem ưu đãi →
-          </Link>
-        </div>
-      </div>
-    </section>
-  );
-};
-
-// ─── MAIN ─────────────────────────────────────────────────────────────────────
+// ─── MAIN: HomePage ──────────────────────────────────────────────────────────
 
 export default function HomePage() {
   const [posts, setPosts] = useState(MOCK_POSTS);
@@ -540,24 +666,50 @@ export default function HomePage() {
   useEffect(() => {
     const fetchAll = async () => {
       const [postsRes, productsRes, promoRes] = await Promise.allSettled([
+        // GET /posts → response.data = { content, page, size, totalElements, ... }
         postApi.getAll({ page: 0, size: 8 }),
-        productApi.getAll({ page: 0, size: 4, sort: "createdAt,desc" }),
+        // GET /products → response.data = { content, page, size, ... }
+        productApi.getAll({ page: 0, size: 4 }),
+        // GET /promotions/active → response.data = [{ promotionId, promotionName, discountPercent, ... }]
         promotionApi.getActive(),
       ]);
-      if (postsRes.status === "fulfilled" && postsRes.value?.content?.length) setPosts(postsRes.value.content);
-      if (productsRes.status === "fulfilled" && productsRes.value?.content?.length) setProducts(productsRes.value.content);
-      if (promoRes.status === "fulfilled" && Array.isArray(promoRes.value)) setPromotions(promoRes.value);
+
+      // unwrap: axiosClient trả về response.data (tức là { success, message, data, timestamp })
+      // api/index.js đã unwrap thêm 1 lần → .then(r => r.data)
+      // Nên ở đây postsRes.value đã là data.content object
+      if (postsRes.status === "fulfilled" && postsRes.value?.content?.length) {
+        setPosts(postsRes.value.content);
+      }
+      if (productsRes.status === "fulfilled" && productsRes.value?.content?.length) {
+        setProducts(productsRes.value.content);
+      }
+      // promotions/active trả về array trực tiếp (không có .content)
+      if (promoRes.status === "fulfilled" && Array.isArray(promoRes.value)) {
+        setPromotions(promoRes.value);
+      }
     };
+
     fetchAll();
   }, []);
 
   return (
-    <div style={{ fontFamily: "'Helvetica Neue', Helvetica, sans-serif" }}>
-      {promotions.length > 0 && <PromoBanner promotions={promotions} />}
+    <div className={styles.page}>
+      {/* Promo bar — chỉ hiện khi có khuyến mãi active */}
+      <PromoBanner promotions={promotions} />
+
+      {/* Hero: bài viết đầu tiên */}
       <HeroBanner post={posts[0]} />
+
+      {/* Section: Bài viết công nghệ nổi bật */}
       <FeaturedPosts posts={posts} />
-      <ReviewsSection products={products.slice(0, 4)} />
-      <EditorialBridge />
+
+      {/* Section: Review sản phẩm — sản phẩm lồng ghép trong editorial */}
+      <ReviewsSection products={products} />
+
+      {/* Section: Editorial bridge — nội dung tư vấn + newsletter */}
+      <EditorialBridge posts={posts} />
+
+      {/* Section: Gợi ý cho bạn */}
       <SuggestionsSection posts={posts.slice(1, 5)} />
     </div>
   );
