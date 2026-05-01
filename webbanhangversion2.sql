@@ -668,6 +668,60 @@ VALUES
 GO
 
 
+
+
+USE WebBanHang;
+GO
+
+DECLARE @UserID INT = 2; -- đổi ID user cần cập nhật
+
+-- 1. Cập nhật đơn hàng của user thành đã giao / đã thanh toán
+UPDATE Orders
+SET 
+    Status = 'DELIVERED',
+    PaymentStatus = 'PAID',
+    CreatedAt = DATEADD(MONTH, -1, GETDATE()),
+    UpdatedAt = GETDATE()
+WHERE UserID = @UserID;
+
+-- 2. Nếu user có đơn DELIVERED đã qua ít nhất 1 tháng
+-- thì đổi thành khách hàng thân thiết
+UPDATE Users
+SET 
+    Role = 'LOYAL_CUSTOMER',
+    LoyalSince = GETDATE()
+WHERE UserID = @UserID
+  AND Role = 'CUSTOMER'
+  AND EXISTS (
+      SELECT 1
+      FROM Orders
+      WHERE UserID = @UserID
+        AND Status = 'DELIVERED'
+        AND CreatedAt <= DATEADD(MONTH, -1, GETDATE())
+  );
+
+-- 3. Kiểm tra kết quả
+SELECT 
+    UserID,
+    FullName,
+    Email,
+    Role,
+    LoyalSince
+FROM Users
+WHERE UserID = @UserID;
+
+SELECT 
+    OrderID,
+    UserID,
+    Status,
+    PaymentStatus,
+    CreatedAt,
+    UpdatedAt
+FROM Orders
+WHERE UserID = @UserID;
+
+
+
 USE WebBanHang;
 GO
 
