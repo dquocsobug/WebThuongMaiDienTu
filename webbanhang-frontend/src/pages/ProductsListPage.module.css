@@ -42,15 +42,12 @@
    TOP BAR
    ══════════════════════════════════════════ */
 .topBar {
-  position: sticky;
-  top: 0;
-  z-index: 50;
+  position: static;
+  z-index: auto;
   background: rgba(249,249,251,0.92);
-  backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
   height: var(--topbar-h);
 }
-
 .topBarInner {
   max-width: 1440px;
   margin: 0 auto;
@@ -217,8 +214,7 @@
   border-radius: var(--radius-lg);
   padding: 0;
   overflow: hidden;
-  position: sticky;
-  top: calc(var(--topbar-h) + 16px);
+  position: static;
 }
 
 .sidebarHeader {

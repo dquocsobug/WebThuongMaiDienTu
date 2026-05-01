@@ -19,13 +19,13 @@ public interface CartRepository extends JpaRepository<Cart, Integer> {
 
     boolean existsByUserUserId(Integer userId);
 
-    // ── Lấy cart kèm CartItems + Product (tránh N+1) ─────────────────────────
+    // ── Lấy cart kèm CartItems + Product để đặt hàng ─────────────────────────
+    // Không fetch Product.images ở đây để tránh lỗi MultipleBagFetchException
 
     @Query("""
-        SELECT c FROM Cart c
+        SELECT DISTINCT c FROM Cart c
         LEFT JOIN FETCH c.cartItems ci
         LEFT JOIN FETCH ci.product p
-        LEFT JOIN FETCH p.images img
         WHERE c.user.userId = :userId
         """)
     Optional<Cart> findByUserIdWithItems(@Param("userId") Integer userId);

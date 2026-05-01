@@ -10,6 +10,7 @@ export const authApi = {
 };
 
 // ─── PRODUCTS ─────────────────────────────────────────────────────────────────
+// ─── PRODUCTS ─────────────────────────────────────────────────────────────────
 export const productApi = {
   getAll: (params) => axiosClient.get("/products", { params }),
 
@@ -19,6 +20,16 @@ export const productApi = {
 
   getByCategory: (categoryId, params) =>
     axiosClient.get(`/products/category/${categoryId}`, { params }),
+
+  // ✅ THÊM MẤY CÁI NÀY
+  getRatingStats: (id) =>
+    axiosClient.get(`/products/${id}/rating-stats`),
+
+  getFeatured: () =>
+    axiosClient.get("/products/featured"),
+
+  getOnSale: () =>
+    axiosClient.get("/products/on-sale"),
 };
 
 // ─── CART ─────────────────────────────────────────────────────────────────────

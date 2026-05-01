@@ -667,6 +667,116 @@ VALUES
 (3, 2);
 GO
 
+
+USE WebBanHang;
+GO
+
+-- Chèn bài viết đã được duyệt
+INSERT INTO Posts
+(
+    Title,
+    Summary,
+    Content,
+    CreatedBy,
+    Status,
+    ApprovedBy,
+    ApprovedAt,
+    ViewCount,
+    IsFeatured,
+    CreatedAt
+)
+VALUES
+(
+    N'Review AirPods Pro 2 sau 1 tháng sử dụng',
+    N'Trải nghiệm thực tế AirPods Pro 2 về chống ồn, pin, chất âm và độ tiện lợi khi dùng hằng ngày.',
+    N'AirPods Pro 2 là một trong những tai nghe không dây đáng mua nhất hiện nay. Khả năng chống ồn chủ động tốt, âm thanh cân bằng, kết nối nhanh với hệ sinh thái Apple. Sau một tháng sử dụng, sản phẩm phù hợp với sinh viên, dân văn phòng và người thường xuyên di chuyển.',
+    1,
+    N'APPROVED',
+    1,
+    GETDATE(),
+    1250,
+    1,
+    GETDATE()
+),
+(
+    N'Sony WH-1000XM5 có còn đáng mua trong năm 2026?',
+    N'Đánh giá Sony WH-1000XM5 sau thời gian dài ra mắt: chống ồn, chất âm và trải nghiệm thực tế.',
+    N'Sony WH-1000XM5 vẫn là lựa chọn rất tốt trong phân khúc tai nghe chống ồn cao cấp. Thiết kế nhẹ, pin tốt, chất âm dễ nghe và khả năng chống ồn thuộc nhóm hàng đầu.',
+    1,
+    N'APPROVED',
+    1,
+    GETDATE(),
+    980,
+    0,
+    GETDATE()
+),
+(
+    N'Hướng dẫn chọn laptop cho sinh viên IT',
+    N'Những tiêu chí quan trọng khi chọn laptop cho sinh viên công nghệ thông tin.',
+    N'Khi chọn laptop cho sinh viên IT, cần ưu tiên CPU mạnh, RAM tối thiểu 16GB, SSD từ 512GB, màn hình tốt và bàn phím thoải mái. Không nên chỉ nhìn vào giá rẻ mà bỏ qua nhu cầu lập trình, chạy máy ảo và làm đồ án.',
+    1,
+    N'APPROVED',
+    1,
+    GETDATE(),
+    2100,
+    1,
+    GETDATE()
+);
+GO
+
+INSERT INTO PostImages (PostID, ImageURL, IsMain, DisplayOrder)
+VALUES
+(1, N'https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=900&q=80', 1, 1),
+(2, N'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=900&q=80', 1, 1),
+(3, N'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=900&q=80', 1, 1);
+GO 
+
+SELECT PostID, COUNT(*) AS MainImageCount
+FROM PostImages
+WHERE IsMain = 1
+GROUP BY PostID
+HAVING COUNT(*) > 1;
+
+;WITH x AS (
+    SELECT 
+        ImageID,
+        PostID,
+        ROW_NUMBER() OVER (
+            PARTITION BY PostID 
+            ORDER BY DisplayOrder ASC, ImageID ASC
+        ) AS rn
+    FROM PostImages
+    WHERE IsMain = 1
+)
+UPDATE pi
+SET IsMain = CASE WHEN x.rn = 1 THEN 1 ELSE 0 END
+FROM PostImages pi
+JOIN x ON pi.ImageID = x.ImageID;
+
+
+
+
+INSERT INTO PostProducts (PostID, ProductID, DisplayOrder, Note)
+SELECT 1, 1, 1, N'Sản phẩm được nhắc đến chính trong bài viết'
+WHERE NOT EXISTS (SELECT 1 FROM PostProducts WHERE PostID = 1 AND ProductID = 1);
+
+INSERT INTO PostProducts (PostID, ProductID, DisplayOrder, Note)
+SELECT 1, 2, 2, N'Sản phẩm so sánh thêm'
+WHERE NOT EXISTS (SELECT 1 FROM PostProducts WHERE PostID = 1 AND ProductID = 2);
+
+INSERT INTO PostProducts (PostID, ProductID, DisplayOrder, Note)
+SELECT 2, 2, 1, N'Sản phẩm được review chính'
+WHERE NOT EXISTS (SELECT 1 FROM PostProducts WHERE PostID = 2 AND ProductID = 2);
+
+INSERT INTO PostProducts (PostID, ProductID, DisplayOrder, Note)
+SELECT 3, 1, 1, N'Sản phẩm gợi ý tham khảo'
+WHERE NOT EXISTS (SELECT 1 FROM PostProducts WHERE PostID = 3 AND ProductID = 1);
+
+INSERT INTO PostProducts (PostID, ProductID, DisplayOrder, Note)
+SELECT 3, 2, 2, N'Sản phẩm phù hợp để so sánh'
+WHERE NOT EXISTS (SELECT 1 FROM PostProducts WHERE PostID = 3 AND ProductID = 2);
+GO
+
 UPDATE Users
 SET Password = '$2a$10$M5P6L2lCNNuD8ZczDVdJSeAyx/jzbWVCrqfnK9QRhNOk9ZK5UOMB6'
 WHERE Email = 'admin@gmail.com';
