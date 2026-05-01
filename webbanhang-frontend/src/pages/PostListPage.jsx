@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { postApi, productApi } from "../api";
 import styles from "./PostListPage.module.css";
 
@@ -9,8 +9,19 @@ const fallbackImg =
 const authorName = (post) =>
   post?.author?.fullName || post?.authorName || "Admin TechCurator";
 
+const getImageUrl = (url) => {
+  if (!url) return fallbackImg;
+  if (url.startsWith("http")) return url;
+  if (url.startsWith("/images")) return url;
+  return `/images/${url}`;
+};
+
 const postImage = (post) =>
-  post?.mainImageUrl || post?.imageUrl || post?.images?.[0]?.imageUrl || fallbackImg;
+  getImageUrl(
+    post?.mainImageUrl ||
+    post?.imageUrl ||
+    post?.images?.[0]?.imageUrl
+  );
 
 const guessTag = (post) => {
   const title = (post?.title || "").toLowerCase();
@@ -23,12 +34,17 @@ const guessTag = (post) => {
   return "Review sản phẩm";
 };
 
+const ADMIN_EMAILS = ["admin@gmail.com", "writer@gmail.com"];
+
 const isCustomerPost = (post) => {
-  const role = post?.author?.role || post?.role || "";
-  return role === "CUSTOMER" || role === "LOYAL_CUSTOMER";
+  const email = post?.author?.email?.toLowerCase() || "";
+
+  return !ADMIN_EMAILS.includes(email);
 };
 
 export default function PostListPage() {
+  const [searchParams] = useSearchParams();
+const productId = searchParams.get("productId");
   const [posts, setPosts] = useState([]);
   const [products, setProducts] = useState([]);
   const [authorFilter, setAuthorFilter] = useState("ALL");
@@ -39,7 +55,11 @@ export default function PostListPage() {
     const fetchData = async () => {
       try {
         const [postRes, productRes] = await Promise.allSettled([
-          postApi.getAll({ page: 0, size: 12 }),
+          postApi.getAll({
+  page: 0,
+  size: 12,
+  productId: productId || undefined,
+}),
           productApi.getAll({ page: 0, size: 6 }),
         ]);
 
@@ -58,31 +78,31 @@ export default function PostListPage() {
     };
 
     fetchData();
-  }, []);
+  }, [productId]);
 
   const spotlight = posts[0];
 
   const filteredPosts = useMemo(() => {
-    let result = posts.slice(1);
+  let result = posts.filter((p) => p.postId !== spotlight?.postId);
 
-    if (authorFilter === "ADMIN") {
-      result = result.filter((p) => !isCustomerPost(p));
-    }
+  if (authorFilter === "ADMIN") {
+    result = result.filter((p) => !isCustomerPost(p));
+  }
 
-    if (authorFilter === "CUSTOMER") {
-      result = result.filter((p) => isCustomerPost(p));
-    }
+  if (authorFilter === "CUSTOMER") {
+    result = result.filter((p) => isCustomerPost(p));
+  }
 
-    if (tagFilter !== "ALL") {
-      result = result.filter((p) => guessTag(p) === tagFilter);
-    }
+  if (tagFilter !== "ALL") {
+    result = result.filter((p) => guessTag(p) === tagFilter);
+  }
 
-    if (sort === "OLDEST") {
-      result.reverse();
-    }
+  if (sort === "OLDEST") {
+    result = [...result].reverse();
+  }
 
-    return result;
-  }, [posts, authorFilter, tagFilter, sort]);
+  return result;
+}, [posts, spotlight, authorFilter, tagFilter, sort]);
 
   return (
     <main className={styles.page}>
@@ -124,7 +144,9 @@ export default function PostListPage() {
             )}
 
             <div className={styles.loadMore}>
-              <Link to="/posts">Xem thêm bài viết</Link>
+              <Link to={productId ? `/posts?productId=${productId}` : "/posts"}>
+  Xem thêm bài viết
+</Link>
             </div>
           </div>
 
@@ -170,7 +192,11 @@ function SpotlightPost({ post }) {
   return (
     <section className={styles.spotlight}>
       <div className={styles.spotImage}>
-        <img src={postImage(post)} alt={post.title} />
+        <img
+  src={postImage(post)}
+  alt={post.title}
+  onError={(e) => (e.currentTarget.src = fallbackImg)}
+/>
         <div />
       </div>
 
@@ -274,7 +300,11 @@ function ArticleCard({ post }) {
   return (
     <article className={styles.articleCard}>
       <Link to={`/posts/${post.postId}`} className={styles.cardImage}>
-        <img src={postImage(post)} alt={post.title} />
+        <img
+  src={postImage(post)}
+  alt={post.title}
+  onError={(e) => (e.currentTarget.src = fallbackImg)}
+/>
         <span className={customer ? styles.customerBadge : ""}>{tag}</span>
       </Link>
 
@@ -334,9 +364,10 @@ function MostMentioned({ products }) {
           >
             <div className={styles.productThumb}>
               <img
-                src={product.mainImageUrl || fallbackImg}
-                alt={product.productName}
-              />
+  src={getImageUrl(product.mainImageUrl)}
+  alt={product.productName}
+  onError={(e) => (e.currentTarget.src = fallbackImg)}
+/>
             </div>
 
             <div>

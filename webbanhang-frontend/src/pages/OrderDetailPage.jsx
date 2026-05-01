@@ -10,7 +10,8 @@ const fallbackImg =
 const imageUrl = (url) => {
   if (!url) return fallbackImg;
   if (url.startsWith("http")) return url;
-  return `http://localhost:8080/uploads/${url}`;
+  if (url.startsWith("/images")) return url;
+  return `/images/${url}`;
 };
 
 const statusMap = {

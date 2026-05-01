@@ -8,8 +8,15 @@ import styles from "./PromotionsPage.module.css";
 const fallbackImg =
   "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80";
 
+const getImageUrl = (url) => {
+  if (!url) return fallbackImg;
+  if (url.startsWith("http")) return url;
+  if (url.startsWith("/images")) return url;
+  return `/images/${url}`;
+};
+
 const getProductImage = (p) =>
-  p?.mainImageUrl || p?.imageUrl || p?.imageURL || fallbackImg;
+  getImageUrl(p?.mainImageUrl || p?.imageUrl || p?.imageURL);
 
 const getBrand = (p) => {
   const name = `${p?.productName || ""} ${p?.description || ""}`.toLowerCase();
@@ -386,7 +393,11 @@ function FeaturedProduct({ product }) {
         </div>
 
         <div className={styles.largeImageWrap}>
-          <img src={getProductImage(product)} alt={product.productName} />
+          <img
+  src={getProductImage(product)}
+  alt={product.productName}
+  onError={(e) => (e.currentTarget.src = fallbackImg)}
+/>
         </div>
       </div>
     </div>
@@ -399,7 +410,11 @@ function SmallHotProduct({ product, onAdd, adding }) {
 
   return (
     <div className={styles.smallHotCard}>
-      <img src={getProductImage(product)} alt={product.productName} />
+      <img
+  src={getProductImage(product)}
+  alt={product.productName}
+  onError={(e) => (e.currentTarget.src = fallbackImg)}
+/>
 
       <div className={styles.smallHotBody}>
         <span>HOT</span>
@@ -433,7 +448,11 @@ function ProductCard({ product }) {
   return (
     <div className={styles.productCard}>
       <div className={styles.productImageWrap}>
-        <img src={getProductImage(product)} alt={product.productName} />
+        <img
+  src={getProductImage(product)}
+  alt={product.productName}
+  onError={(e) => (e.currentTarget.src = fallbackImg)}
+/>
 
         {discount > 0 && <span>-{discount}%</span>}
       </div>
@@ -471,7 +490,11 @@ function ArticleCard({ post }) {
   return (
     <article className={styles.articleCard}>
       <div className={styles.articleImage}>
-        <img src={post.mainImageUrl || fallbackImg} alt={post.title} />
+        <img
+  src={getImageUrl(post.mainImageUrl || post.imageUrl)}
+  alt={post.title}
+  onError={(e) => (e.currentTarget.src = fallbackImg)}
+/>
       </div>
 
       <div>

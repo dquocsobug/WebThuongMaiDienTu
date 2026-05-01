@@ -438,7 +438,11 @@ INSERT INTO Categories (CategoryName, Description)
 VALUES 
 (N'Tai nghe', N'Tai nghe có dây và không dây'),
 (N'Điện thoại', N'Các dòng điện thoại thông minh'),
-(N'Phụ kiện', N'Phụ kiện công nghệ');
+(N'Phụ kiện', N'Phụ kiện công nghệ'),
+(N'Laptop', N'Laptop học tập, văn phòng và gaming'),
+(N'Đồng hồ thông minh', N'Smartwatch theo dõi sức khỏe'),
+(N'Bàn phím', N'Bàn phím cơ và bàn phím văn phòng'),
+(N'Chuột', N'Chuột gaming và chuột không dây');
 GO
 
 -- =========================================
@@ -449,7 +453,17 @@ VALUES
 (N'AirPods Pro 2', N'Tai nghe chống ồn cao cấp của Apple', 5500000, 50, 1),
 (N'Sony WH-1000XM5', N'Tai nghe chống ồn cao cấp của Sony', 8000000, 30, 1),
 (N'iPhone 15', N'Điện thoại Apple hiệu năng cao', 25000000, 20, 2),
-(N'Sạc nhanh 20W', N'Củ sạc nhanh dành cho điện thoại', 300000, 100, 3);
+(N'Sạc nhanh 20W', N'Củ sạc nhanh dành cho điện thoại', 300000, 100, 3),
+(N'MacBook Air M2', N'Laptop mỏng nhẹ dùng chip Apple M2', 24500000, 15, 4),
+(N'Dell XPS 13', N'Laptop cao cấp cho học tập và văn phòng', 28000000, 10, 4),
+(N'Apple Watch Series 9', N'Đồng hồ thông minh theo dõi sức khỏe', 10500000, 25, 5),
+(N'Samsung Galaxy Watch 6', N'Smartwatch Android pin tốt', 6500000, 30, 5),
+(N'Keychron K2', N'Bàn phím cơ không dây layout gọn', 2200000, 40, 6),
+(N'Logitech MX Keys', N'Bàn phím văn phòng cao cấp', 2600000, 35, 6),
+(N'Logitech MX Master 3S', N'Chuột không dây cao cấp cho làm việc', 2500000, 45, 7),
+(N'Razer DeathAdder V3', N'Chuột gaming siêu nhẹ', 1800000, 50, 7),
+(N'Galaxy S24 Ultra', N'Điện thoại Samsung cao cấp', 30000000, 18, 2),
+(N'Tai nghe JBL Tune 770NC', N'Tai nghe chống ồn giá tốt', 3200000, 28, 1);
 GO
 
 -- =========================================
@@ -461,14 +475,25 @@ VALUES
 (1, 'airpods2.jpg', 0, 2),
 (2, 'sony1.jpg', 1, 1),
 (3, 'iphone1.jpg', 1, 1),
-(4, 'charger1.jpg', 1, 1);
+(4, 'charger1.jpg', 1, 1),
+(5, 'macbook-air-m2-1.jpg', 1, 1),
+(5, 'macbook-air-m2-2.jpg', 0, 2),
+(6, 'dell-xps-13-1.jpg', 1, 1),
+(7, 'apple-watch-s9-1.jpg', 1, 1),
+(8, 'galaxy-watch-6-1.jpg', 1, 1),
+(9, 'keychron-k2-1.jpg', 1, 1),
+(10, 'mx-keys-1.jpg', 1, 1),
+(11, 'mx-master-3s-1.jpg', 1, 1),
+(12, 'razer-deathadder-v3-1.jpg', 1, 1),
+(13, 'galaxy-s24-ultra-1.jpg', 1, 1),
+(14, 'jbl-tune-770nc-1.jpg', 1, 1);
 GO
 
 -- =========================================
 -- 5. CARTS
 -- =========================================
 INSERT INTO Carts (UserID)
-VALUES (2), (3);
+VALUES (2), (3) ;
 GO
 
 -- =========================================
@@ -478,7 +503,13 @@ INSERT INTO CartItems (CartID, ProductID, Quantity)
 VALUES 
 (1, 1, 1),
 (1, 4, 2),
-(2, 2, 1);
+(2, 2, 1),
+(1, 5, 1),
+(1, 9, 1),
+(2, 13, 1),
+(2, 11, 1),
+(2, 7, 1),
+(2, 14, 2);
 GO
 
 -- =========================================
@@ -573,7 +604,32 @@ INSERT INTO Posts
 VALUES 
 (
     N'Top tai nghe tốt nhất 2026',
-    N'Bài viết tổng hợp những mẫu tai nghe đáng mua dành cho sinh viên và dân văn phòng.',
+    N'Năm 2026 chứng kiến sự phát triển mạnh mẽ của công nghệ âm thanh, đặc biệt là phân khúc tai nghe không dây và chống ồn chủ động (ANC). 
+Các hãng lớn như Apple, Sony, Bose và JBL đều liên tục cải tiến chất lượng âm thanh, thời lượng pin và trải nghiệm người dùng.
+
+Đối với sinh viên và dân văn phòng, tiêu chí lựa chọn tai nghe thường bao gồm:
+- Khả năng chống ồn để tập trung học tập/làm việc
+- Thời lượng pin dài (ít nhất 20-30 giờ)
+- Độ thoải mái khi đeo lâu
+- Kết nối ổn định (Bluetooth 5.2 trở lên)
+
+Một số lựa chọn nổi bật:
+1. AirPods Pro 2:
+   - Âm thanh cân bằng, phù hợp người dùng iPhone
+   - ANC tốt trong tầm giá
+   - Tích hợp sâu với hệ sinh thái Apple
+
+2. Sony WH-1000XM5:
+   - Chống ồn hàng đầu thị trường
+   - Âm bass mạnh, phù hợp giải trí
+   - Pin lên tới 30 giờ
+
+3. JBL Tune 770NC:
+   - Giá rẻ hơn nhưng vẫn có ANC
+   - Phù hợp sinh viên ngân sách thấp
+
+Kết luận: Nếu bạn cần trải nghiệm cao cấp → Sony/Apple.
+Nếu bạn cần tiết kiệm → JBL là lựa chọn hợp lý.',
     N'Danh sách tai nghe nổi bật năm 2026',
     1,
     'APPROVED',
@@ -581,14 +637,138 @@ VALUES
     GETDATE(),
     NULL
 ),
+
 (
     N'Review AirPods Pro 2 sau 1 tháng sử dụng',
-    N'Bài viết chia sẻ trải nghiệm thực tế sau khi sử dụng AirPods Pro 2 trong học tập và giải trí.',
+    N'Sau 1 tháng sử dụng AirPods Pro 2 trong môi trường học tập và làm việc, mình có một số đánh giá chi tiết như sau:
+
+1. Chất lượng âm thanh:
+   - Âm thanh cân bằng, không quá thiên bass
+   - Nghe nhạc, podcast và học online đều rất tốt
+
+2. Chống ồn (ANC):
+   - Hoạt động cực kỳ hiệu quả trong quán cà phê
+   - Có thể loại bỏ ~80-90% tiếng ồn môi trường
+
+3. Transparency Mode:
+   - Rất hữu ích khi cần nghe môi trường xung quanh
+   - Tự nhiên hơn thế hệ trước
+
+4. Pin:
+   - ~6 giờ nghe liên tục
+   - Hộp sạc nâng tổng thời gian lên ~30 giờ
+
+5. Trải nghiệm hệ sinh thái:
+   - Kết nối nhanh với iPhone, iPad
+   - Chuyển đổi thiết bị mượt
+
+Nhược điểm:
+- Giá cao
+- Không tối ưu cho Android
+
+Kết luận: Đây là lựa chọn tốt nhất nếu bạn đang dùng hệ sinh thái Apple.',
     N'Review thực tế AirPods Pro 2',
     3,
-    'PENDING',
-    NULL,
-    NULL,
+    'APPROVED',
+    1,
+    GETDATE(),
+    NULL
+),
+
+(
+    N'Laptop sinh viên nên mua năm 2026',
+    N'Việc chọn laptop cho sinh viên năm 2026 không chỉ phụ thuộc vào giá mà còn phụ thuộc vào ngành học và nhu cầu sử dụng.
+
+1. Sinh viên CNTT:
+   - Cần CPU mạnh (Intel i5/i7 hoặc Apple M2 trở lên)
+   - RAM tối thiểu 16GB
+   - SSD 512GB
+
+2. Sinh viên kinh tế/văn phòng:
+   - Ưu tiên nhẹ, pin lâu
+   - RAM 8-16GB là đủ
+
+3. Gợi ý:
+   - MacBook Air M2: nhẹ, pin lâu, phù hợp đa số
+   - Dell XPS 13: thiết kế đẹp, màn hình chất lượng
+   - ASUS Vivobook: giá tốt
+
+4. Lưu ý khi mua:
+   - Không nên mua laptop dưới 8GB RAM
+   - Nên chọn SSD thay vì HDD
+   - Ưu tiên máy có pin > 8 giờ
+
+Kết luận: MacBook Air M2 là lựa chọn cân bằng nhất giữa hiệu năng và pin.',
+    N'Gợi ý laptop đáng mua cho sinh viên',
+    4,
+    'APPROVED',
+    1,
+    GETDATE(),
+    NULL
+),
+
+(
+    N'So sánh Apple Watch Series 9 và Galaxy Watch 6',
+    N'Apple Watch Series 9 và Galaxy Watch 6 là hai mẫu smartwatch nổi bật nhất năm 2026.
+
+1. Thiết kế:
+   - Apple Watch: vuông, hiện đại
+   - Galaxy Watch: tròn, giống đồng hồ truyền thống
+
+2. Hệ điều hành:
+   - Apple Watch: watchOS (chỉ dùng tốt với iPhone)
+   - Galaxy Watch: WearOS (tương thích Android)
+
+3. Tính năng:
+   - Cả hai đều có đo nhịp tim, SpO2, theo dõi giấc ngủ
+   - Apple Watch mạnh hơn về app ecosystem
+   - Galaxy Watch có pin tốt hơn
+
+4. Pin:
+   - Apple Watch: ~1-2 ngày
+   - Galaxy Watch: ~2-3 ngày
+
+5. Giá:
+   - Apple Watch cao hơn
+
+Kết luận:
+- Dùng iPhone → Apple Watch
+- Dùng Android → Galaxy Watch',
+    N'So sánh hai mẫu đồng hồ thông minh phổ biến',
+    4,
+    'APPROVED',
+    1,
+    GETDATE(),
+    NULL
+),
+
+(
+    N'Trải nghiệm Logitech MX Master 3S',
+    N'Logitech MX Master 3S là một trong những con chuột tốt nhất cho dân văn phòng và designer.
+
+1. Thiết kế:
+   - Công thái học, ôm tay
+   - Phù hợp sử dụng lâu
+
+2. Hiệu năng:
+   - DPI cao, tracking tốt trên nhiều bề mặt
+   - Silent click (bấm êm)
+
+3. Tính năng:
+   - Scroll wheel thông minh
+   - Kết nối nhiều thiết bị
+
+4. Nhược điểm:
+   - Giá cao
+   - Không phù hợp gaming
+
+Kết luận:
+Nếu bạn làm việc nhiều trên máy tính → rất đáng đầu tư.',
+    N'Đánh giá chuột Logitech MX Master 3S',
+    3,
+    'APPROVED',
+    1,
+    GETDATE(),
     NULL
 );
 GO
@@ -600,7 +780,12 @@ INSERT INTO PostImages (PostID, ImageURL, IsMain, DisplayOrder)
 VALUES 
 (1, 'post1.jpg', 1, 1),
 (1, 'post1_2.jpg', 0, 2),
-(2, 'post2.jpg', 1, 1);
+(2, 'post2.jpg', 1, 1),
+(3, 'post-laptop-2026-1.jpg', 1, 1),
+(3, 'post-laptop-2026-2.jpg', 0, 2),
+(4, 'post-smartwatch-1.jpg', 1, 1),
+(4, 'post-smartwatch-2.jpg', 0, 2),
+(5, 'post-mx-master-3s-1.jpg', 1, 1);
 GO
 
 -- =========================================
@@ -611,7 +796,12 @@ INSERT INTO Comments (UserID, PostID, Content)
 VALUES 
 (2, 1, N'Bài viết rất hữu ích cho người mới mua tai nghe'),
 (3, 1, N'Mình đã dùng Sony và thấy rất ổn'),
-(2, 2, N'Mong bài này sớm được duyệt');
+(2, 2, N'Mong bài này sớm được duyệt'),
+(2, 3, N'Mình đang cần mua laptop đi học, bài viết rất hữu ích'),
+(3, 3, N'MacBook Air M2 khá phù hợp sinh viên CNTT'),
+(2, 4, N'Mình dùng Android nên quan tâm Galaxy Watch 6 hơn'),
+(2, 4, N'Apple Watch mạnh khi dùng với iPhone'),
+(3, 5, N'Mong bài đánh giá chuột này sớm được duyệt');
 GO
 
 -- =========================================
@@ -620,7 +810,10 @@ GO
 INSERT INTO Promotions (PromotionName, DiscountPercent, StartDate, EndDate)
 VALUES 
 (N'Giảm giá hè', 10, GETDATE(), DATEADD(DAY, 30, GETDATE())),
-(N'Sale cuối năm', 20, GETDATE(), DATEADD(DAY, 45, GETDATE()));
+(N'Sale cuối năm', 20, GETDATE(), DATEADD(DAY, 45, GETDATE())),
+(N'Back to School', 15, GETDATE(), DATEADD(DAY, 60, GETDATE())),
+(N'Ưu đãi phụ kiện', 12, GETDATE(), DATEADD(DAY, 40, GETDATE())),
+(N'Sale laptop cao cấp', 8, GETDATE(), DATEADD(DAY, 35, GETDATE()));
 GO
 
 -- =========================================
@@ -629,7 +822,14 @@ GO
 INSERT INTO ProductPromotions (ProductID, PromotionID)
 VALUES 
 (1, 1),
-(2, 2);
+(2, 2),
+(5, 3),
+(6, 5),
+(9, 4),
+(10, 4),
+(11, 4),
+(12, 4),
+(14, 3);
 GO
 
 -- =========================================
@@ -639,7 +839,12 @@ INSERT INTO PostProducts (PostID, ProductID, DisplayOrder, Note)
 VALUES 
 (1, 1, 1, N'Phù hợp người thích hệ sinh thái Apple'),
 (1, 2, 2, N'Phù hợp người cần chống ồn mạnh'),
-(2, 1, 1, N'Sản phẩm được trải nghiệm thực tế');
+(2, 1, 1, N'Sản phẩm được trải nghiệm thực tế'),
+(3, 5, 1, N'Phù hợp sinh viên cần máy nhẹ, pin lâu'),
+(3, 6, 2, N'Phù hợp người cần laptop Windows cao cấp'),
+(4, 7, 1, N'Phù hợp người dùng iPhone'),
+(4, 8, 2, N'Phù hợp người dùng Android'),
+(5, 11, 1, N'Chuột phù hợp làm việc văn phòng và thiết kế');
 GO
 
 -- =========================================
@@ -655,7 +860,10 @@ INSERT INTO Vouchers
 )
 VALUES 
 ('VIP10', N'Ưu đãi khách hàng thân thiết 10%', 10, 'LOYAL_CUSTOMER'),
-('VIP20', N'Ưu đãi khách hàng thân thiết 20%', 20, 'LOYAL_CUSTOMER');
+('VIP20', N'Ưu đãi khách hàng thân thiết 20%', 20, 'LOYAL_CUSTOMER'),
+('STUDENT15', N'Ưu đãi sinh viên 15%', 15, 'LOYAL_CUSTOMER'),
+('WRITER10', N'Ưu đãi cộng tác viên 10%', 10, 'LOYAL_CUSTOMER'),
+('LOYAL30', N'Ưu đãi khách hàng thân thiết 30%', 30, 'LOYAL_CUSTOMER');
 GO
 
 -- =========================================
@@ -666,146 +874,6 @@ VALUES
 (3, 1),
 (3, 2);
 GO
-
-
-
-
-USE WebBanHang;
-GO
-
-DECLARE @UserID INT = 2; -- đổi ID user cần cập nhật
-
--- 1. Cập nhật đơn hàng của user thành đã giao / đã thanh toán
-UPDATE Orders
-SET 
-    Status = 'DELIVERED',
-    PaymentStatus = 'PAID',
-    CreatedAt = DATEADD(MONTH, -1, GETDATE()),
-    UpdatedAt = GETDATE()
-WHERE UserID = @UserID;
-
--- 2. Nếu user có đơn DELIVERED đã qua ít nhất 1 tháng
--- thì đổi thành khách hàng thân thiết
-UPDATE Users
-SET 
-    Role = 'LOYAL_CUSTOMER',
-    LoyalSince = GETDATE()
-WHERE UserID = @UserID
-  AND Role = 'CUSTOMER'
-  AND EXISTS (
-      SELECT 1
-      FROM Orders
-      WHERE UserID = @UserID
-        AND Status = 'DELIVERED'
-        AND CreatedAt <= DATEADD(MONTH, -1, GETDATE())
-  );
-
--- 3. Kiểm tra kết quả
-SELECT 
-    UserID,
-    FullName,
-    Email,
-    Role,
-    LoyalSince
-FROM Users
-WHERE UserID = @UserID;
-
-SELECT 
-    OrderID,
-    UserID,
-    Status,
-    PaymentStatus,
-    CreatedAt,
-    UpdatedAt
-FROM Orders
-WHERE UserID = @UserID;
-
-
-
-USE WebBanHang;
-GO
-
--- Chèn bài viết đã được duyệt
-INSERT INTO Posts
-(
-    Title,
-    Summary,
-    Content,
-    CreatedBy,
-    Status,
-    ApprovedBy,
-    ApprovedAt,
-    ViewCount,
-    IsFeatured,
-    CreatedAt
-)
-VALUES
-(
-    N'Review AirPods Pro 2 sau 1 tháng sử dụng',
-    N'Trải nghiệm thực tế AirPods Pro 2 về chống ồn, pin, chất âm và độ tiện lợi khi dùng hằng ngày.',
-    N'AirPods Pro 2 là một trong những tai nghe không dây đáng mua nhất hiện nay. Khả năng chống ồn chủ động tốt, âm thanh cân bằng, kết nối nhanh với hệ sinh thái Apple. Sau một tháng sử dụng, sản phẩm phù hợp với sinh viên, dân văn phòng và người thường xuyên di chuyển.',
-    1,
-    N'APPROVED',
-    1,
-    GETDATE(),
-    1250,
-    1,
-    GETDATE()
-),
-(
-    N'Sony WH-1000XM5 có còn đáng mua trong năm 2026?',
-    N'Đánh giá Sony WH-1000XM5 sau thời gian dài ra mắt: chống ồn, chất âm và trải nghiệm thực tế.',
-    N'Sony WH-1000XM5 vẫn là lựa chọn rất tốt trong phân khúc tai nghe chống ồn cao cấp. Thiết kế nhẹ, pin tốt, chất âm dễ nghe và khả năng chống ồn thuộc nhóm hàng đầu.',
-    1,
-    N'APPROVED',
-    1,
-    GETDATE(),
-    980,
-    0,
-    GETDATE()
-),
-(
-    N'Hướng dẫn chọn laptop cho sinh viên IT',
-    N'Những tiêu chí quan trọng khi chọn laptop cho sinh viên công nghệ thông tin.',
-    N'Khi chọn laptop cho sinh viên IT, cần ưu tiên CPU mạnh, RAM tối thiểu 16GB, SSD từ 512GB, màn hình tốt và bàn phím thoải mái. Không nên chỉ nhìn vào giá rẻ mà bỏ qua nhu cầu lập trình, chạy máy ảo và làm đồ án.',
-    1,
-    N'APPROVED',
-    1,
-    GETDATE(),
-    2100,
-    1,
-    GETDATE()
-);
-GO
-
-INSERT INTO PostImages (PostID, ImageURL, IsMain, DisplayOrder)
-VALUES
-(1, N'https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=900&q=80', 1, 1),
-(2, N'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=900&q=80', 1, 1),
-(3, N'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=900&q=80', 1, 1);
-GO 
-
-SELECT PostID, COUNT(*) AS MainImageCount
-FROM PostImages
-WHERE IsMain = 1
-GROUP BY PostID
-HAVING COUNT(*) > 1;
-
-;WITH x AS (
-    SELECT 
-        ImageID,
-        PostID,
-        ROW_NUMBER() OVER (
-            PARTITION BY PostID 
-            ORDER BY DisplayOrder ASC, ImageID ASC
-        ) AS rn
-    FROM PostImages
-    WHERE IsMain = 1
-)
-UPDATE pi
-SET IsMain = CASE WHEN x.rn = 1 THEN 1 ELSE 0 END
-FROM PostImages pi
-JOIN x ON pi.ImageID = x.ImageID;
 
 
 
@@ -850,3 +918,12 @@ WHERE Email = 'admin@gmail.com';
 UPDATE Users
 SET Password = '$2a$10$aPfg88DgwZls4fDehjtfz.WOCvYKQ8iOrLh9wADB.WK3AnBsK60Mi'
 WHERE Email = 'writer@gmail.com';
+
+UPDATE Posts
+SET 
+    Status = 'APPROVED',
+    ApprovedBy = 1,
+    ApprovedAt = GETDATE(),
+    RejectReason = NULL
+WHERE Status = 'PENDING';
+GO

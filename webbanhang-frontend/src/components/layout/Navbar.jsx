@@ -156,7 +156,7 @@ const Navbar = () => {
     <header className={`sticky top-0 z-40 bg-white transition-shadow ${scrolled ? "shadow-md" : "shadow-sm"}`}>
       {/* Top bar */}
       <div className="bg-indigo-600 text-white text-xs text-center py-1.5 px-4">
-        🚚 Miễn phí vận chuyển cho đơn từ 500.000₫ &nbsp;|&nbsp; 📞 Hotline: 1800 xxxx
+        🚚 Miễn phí vận chuyển cho đơn từ 5.000.000₫ &nbsp;|&nbsp; 📞 Hotline: 3636 3636
       </div>
 
       <div className="max-w-[1600px] mx-auto px-6 xl:px-10 h-16 flex items-center gap-4">

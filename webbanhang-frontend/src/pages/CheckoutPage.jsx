@@ -11,10 +11,15 @@ const BANK_INFO = {
 };
 
 const getImageUrl = (url) => {
-  if (!url) return "https://placehold.co/400x400/f3f3f5/94a3b8?text=Product";
+  if (!url) return "/images/placeholder.png"; // fallback nếu null
+
+  // Nếu backend trả full link thì dùng luôn
   if (url.startsWith("http")) return url;
-  return `/${url}`;
+
+  // Nếu bạn dùng public/images
+  return `/images/${url}`;
 };
+
 
 const createVietQrUrl = ({ amount, content }) => {
   return `https://img.vietqr.io/image/${BANK_INFO.bankId}-${BANK_INFO.accountNo}-compact2.png?amount=${Math.round(

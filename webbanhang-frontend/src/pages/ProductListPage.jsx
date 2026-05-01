@@ -14,6 +14,16 @@ const StarRating = ({ rating }) => (
   </div>
 );
 
+const getImageUrl = (url) => {
+  if (!url) return "/images/placeholder.png"; // fallback nếu null
+
+  // Nếu backend trả full link thì dùng luôn
+  if (url.startsWith("http")) return url;
+
+  // Nếu bạn dùng public/images
+  return `/images/${url}`;
+};
+
 // ─── Product Card ─────────────────────────────────────────────────────────────
 const ProductCard = ({ product }) => {
   const hasDiscount = product.discountedPrice && product.discountedPrice < product.price;
@@ -28,7 +38,7 @@ const ProductCard = ({ product }) => {
           <div className={styles.cardOutOfStock}>Hết hàng</div>
         )}
         <img
-          src={product.mainImageUrl}
+  src={getImageUrl(product.mainImageUrl)}
           alt={product.productName}
           className={styles.cardImage}
           loading="lazy"

@@ -31,6 +31,12 @@ const StarRating = ({ rating, count }) => (
     <span className={styles.ratingCount}>({count} đánh giá)</span>
   </div>
 );
+const getImageUrl = (url) => {
+  if (!url) return fallbackImg;
+  if (url.startsWith("http")) return url;
+  if (url.startsWith("/images")) return url;
+  return `/images/${url}`;
+};
 
 const ProductCard = ({ item, onAddToCart }) => {
   const { product, note } = item;
@@ -43,7 +49,12 @@ const ProductCard = ({ item, onAddToCart }) => {
           {hasDiscount && (
             <span className={styles.discountBadge}>-{product.discountPercent}%</span>
           )}
-          <img src={product.mainImageUrl} alt={product.productName} className={styles.productImage} />
+          <img
+  src={getImageUrl(product.mainImageUrl)}
+  alt={product.productName}
+  className={styles.productImage}
+  onError={(e) => (e.currentTarget.src = fallbackImg)}
+/>
         </div>
         <div className={styles.productInfo}>
           <span className={styles.productCategory}>{product.categoryName}</span>
@@ -342,7 +353,12 @@ setCommentTotal(postData.commentCount ?? 0);
           {/* Hero image */}
           {post.mainImageUrl && (
             <div className={styles.heroWrap}>
-              <img src={post.mainImageUrl} alt={post.title} className={styles.heroImage} />
+              <img
+  src={getImageUrl(post.mainImageUrl)}
+  alt={post.title}
+  className={styles.heroImage}
+  onError={(e) => (e.currentTarget.src = fallbackImg)}
+/>
               <div className={styles.heroOverlay} />
             </div>
           )}
@@ -434,10 +450,11 @@ setCommentTotal(postData.commentCount ?? 0);
                       className={styles.sidebarProduct}
                     >
                       <img
-                        src={item.product.mainImageUrl}
-                        alt={item.product.productName}
-                        className={styles.sidebarProductImg}
-                      />
+  src={getImageUrl(item.product.mainImageUrl)}
+  alt={item.product.productName}
+  className={styles.sidebarProductImg}
+  onError={(e) => (e.currentTarget.src = fallbackImg)}
+/>
                       <div>
                         <div className={styles.sidebarProductName}>{item.product.productName}</div>
                         <div className={styles.sidebarProductPrice}>

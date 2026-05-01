@@ -5,9 +5,13 @@ import { formatVND } from "../utils/format";
 import styles from "./CartPage.module.css";
 
 const getImageUrl = (url) => {
-  if (!url) return "https://placehold.co/400x400/f3f3f5/94a3b8?text=Product";
+  if (!url) return "/images/placeholder.png"; // fallback nếu null
+
+  // Nếu backend trả full link thì dùng luôn
   if (url.startsWith("http")) return url;
-  return `/${url}`;
+
+  // Nếu bạn dùng public/images
+  return `/images/${url}`;
 };
 
 export default function CartPage() {
@@ -314,7 +318,9 @@ function CartItem({ item, disabled, onIncrease, onDecrease, onRemove }) {
         {!outOfStock && (
           <div className={styles.links}>
             <Link to={`/products/${product?.productId}`}>💬 Xem review sản phẩm</Link>
-            <Link to="/posts">📰 Xem bài viết liên quan</Link>
+            <Link to={`/posts?productId=${product?.productId}`}>
+  📰 Xem bài viết liên quan
+</Link>
           </div>
         )}
 

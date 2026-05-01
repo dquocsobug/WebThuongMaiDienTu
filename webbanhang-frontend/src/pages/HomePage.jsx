@@ -13,6 +13,15 @@ const imgFallback = (e) =>
 const productImgFallback = (e) =>
   (e.target.src = "https://placehold.co/400x400/f8f9fa/94a3b8?text=No+Image");
 
+const getImageUrl = (url) => {
+  if (!url) return "https://placehold.co/600x400";
+
+  if (url.startsWith("http")) return url;
+
+  if (url.startsWith("/images")) return url;
+
+  return `/images/${url}`;
+};
 /**
  * Scroll-reveal hook — element fades in once it enters viewport.
  */
@@ -224,7 +233,7 @@ const HeroBanner = ({ post }) => {
       {/* Ảnh nền */}
       <div className={styles.heroBg}>
         <img
-          src={post.mainImageUrl}
+  src={getImageUrl(post.mainImageUrl)}
           alt=""
           onError={imgFallback}
           className={styles.heroBgImg}
@@ -338,8 +347,7 @@ const FeaturedPosts = ({ posts }) => {
             {/* Big card */}
             <Link to={`/posts/${hero.postId}`} className={styles.bigCard}>
               <div className={styles.bigCardImg}>
-                <img
-                  src={hero.mainImageUrl}
+                <img src={getImageUrl(hero.mainImageUrl)}
                   alt={hero.title}
                   onError={imgFallback}
                 />
@@ -362,8 +370,7 @@ const FeaturedPosts = ({ posts }) => {
                   className={styles.smallItem}
                 >
                   <div className={styles.smallThumb}>
-                    <img
-                      src={post.mainImageUrl}
+                    <img src={getImageUrl(post.mainImageUrl)}
                       alt={post.title}
                       onError={imgFallback}
                     />
@@ -419,7 +426,7 @@ const ProductCard = ({ product, delay = 0 }) => {
         {/* Ảnh */}
         <div className={styles.productImgWrap}>
           <img
-            src={product.mainImageUrl}
+  src={getImageUrl(product.mainImageUrl)}
             alt={product.productName}
             onError={productImgFallback}
             className={styles.productImg}
@@ -607,7 +614,7 @@ const SuggestionCard = ({ post, delay }) => {
     >
       <div className={styles.suggestionThumb}>
         <img
-          src={post.mainImageUrl}
+  src={getImageUrl(post.mainImageUrl)}
           alt={post.title}
           onError={imgFallback}
         />

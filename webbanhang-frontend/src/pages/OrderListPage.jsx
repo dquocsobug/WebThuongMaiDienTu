@@ -30,13 +30,23 @@ const statusLabel = {
   CANCELLED: "Đã hủy",
   CANCELED: "Đã hủy",
 };
+const getImageUrl = (url) => {
+  if (!url) return "/images/placeholder.png"; // fallback nếu null
+
+  // Nếu backend trả full link thì dùng luôn
+  if (url.startsWith("http")) return url;
+
+  // Nếu bạn dùng public/images
+  return `/images/${url}`;
+};
+
 
 export default function OrderListPage() {
   const [orders, setOrders] = useState([]);
   const [activeStatus, setActiveStatus] = useState("ALL");
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-
+  const [orderDetailsMap, setOrderDetailsMap] = useState({});
   const { user: authUser, logout } = useAuth();
 const currentUser = authUser || {};
   const navigate = useNavigate();
@@ -55,24 +65,44 @@ const currentUser = authUser || {};
   };
 
   useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const res = await orderApi.getMyOrders({
-          page,
-          size: 6,
-          status: activeStatus === "ALL" ? undefined : activeStatus,
-        });
+  const fetchOrders = async () => {
+    try {
+      const res = await orderApi.getMyOrders({
+        page,
+        size: 6,
+        status: activeStatus === "ALL" ? undefined : activeStatus,
+      });
 
-        const data = res?.data?.data || res?.data || res;
-        setOrders(data?.content || []);
-        setTotalPages(data?.totalPages || 1);
-      } catch (err) {
-        console.error("Lỗi tải đơn hàng:", err);
-      }
-    };
+      const data = res?.data?.data || res?.data || res;
+      const list = data?.content || [];
 
-    fetchOrders();
-  }, [activeStatus, page]);
+      setOrders(list);
+      setTotalPages(data?.totalPages || 1);
+
+      // 🔥 fetch detail từng order để lấy ảnh
+      const detailPromises = list.map((o) =>
+        orderApi.getOrderById(o.orderId)
+      );
+
+      const results = await Promise.allSettled(detailPromises);
+
+      const map = {};
+      results.forEach((r, i) => {
+        if (r.status === "fulfilled") {
+          const d = r.value?.data || r.value;
+          map[list[i].orderId] = d;
+        }
+      });
+
+      setOrderDetailsMap(map);
+
+    } catch (err) {
+      console.error("Lỗi tải đơn hàng:", err);
+    }
+  };
+
+  fetchOrders();
+}, [activeStatus, page]);
 
   const filteredOrders = useMemo(() => {
     if (activeStatus === "ALL") return orders;
@@ -152,8 +182,12 @@ const currentUser = authUser || {};
             <div className={styles.empty}>Bạn chưa có đơn hàng nào.</div>
           ) : (
             filteredOrders.map((order) => (
-              <OrderCard key={order.orderId} order={order} />
-            ))
+  <OrderCard
+  key={order.orderId}
+  order={order}
+  detail={orderDetailsMap[order.orderId]}
+/>
+))
           )}
         </div>
 
@@ -191,9 +225,9 @@ const currentUser = authUser || {};
   );
 }
 
-function OrderCard({ order }) {
-  const firstItem = order.orderDetails?.[0] || order.items?.[0];
-  const product = firstItem?.product || firstItem;
+function OrderCard({ order, detail }) {
+  const firstItem = detail?.orderDetails?.[0];
+const product = firstItem?.product;
 
   const status = order.status || "PENDING";
   const isDelivered = status === "DELIVERED";
@@ -231,14 +265,10 @@ function OrderCard({ order }) {
           <div className={`${styles.productRow} ${isCancelled ? styles.cancelledRow : ""}`}>
             <div className={styles.productImg}>
               <img
-                src={
-                  product?.mainImageUrl ||
-                  product?.imageUrl ||
-                  product?.imageURL ||
-                  fallbackImg
-                }
-                alt={product?.productName || "Sản phẩm"}
-              />
+  src={getImageUrl(product?.mainImageUrl)}
+  alt={product?.productName || "Sản phẩm"}
+  onError={(e) => (e.currentTarget.src = fallbackImg)}
+/>
             </div>
 
             <div>

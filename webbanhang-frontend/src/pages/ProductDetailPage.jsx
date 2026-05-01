@@ -10,8 +10,15 @@ const fallbackImage =
 
 const getImageUrl = (url) => {
   if (!url) return fallbackImage;
+
+  // Nếu backend trả full URL
   if (url.startsWith("http")) return url;
-  return `/${url}`;
+
+  // Nếu đã có /images thì giữ nguyên
+  if (url.startsWith("/images")) return url;
+
+  // Chuẩn hóa về public/images
+  return `/images/${url}`;
 };
 
 const getFinalPrice = (product) => product?.discountedPrice || product?.price || 0;
@@ -122,7 +129,11 @@ export default function ProductDetailPage() {
       <section className={styles.hero}>
         <div className={styles.gallery}>
           <div className={styles.mainImageBox}>
-            <img src={getImageUrl(activeImage)} alt={product.productName} />
+            <img
+  src={getImageUrl(activeImage)}
+  alt={product.productName}
+  onError={(e) => (e.currentTarget.src = fallbackImage)}
+/>
           </div>
 
           <div className={styles.thumbGrid}>
@@ -133,7 +144,11 @@ export default function ProductDetailPage() {
                 onClick={() => setActiveImage(image)}
                 className={`${styles.thumb} ${activeImage === image ? styles.thumbActive : ""}`}
               >
-                <img src={getImageUrl(image)} alt={`${product.productName} ${index + 1}`} />
+                <img
+  src={getImageUrl(image)}
+  alt={`${product.productName} ${index + 1}`}
+  onError={(e) => (e.currentTarget.src = fallbackImage)}
+/>
               </button>
             ))}
           </div>
@@ -224,7 +239,11 @@ export default function ProductDetailPage() {
           </div>
 
           <div className={styles.expertImage}>
-            <img src={getImageUrl(product.mainImageUrl)} alt={product.productName} />
+            <img
+  src={getImageUrl(product.mainImageUrl)}
+  alt={product.productName}
+  onError={(e) => (e.currentTarget.src = fallbackImage)}
+/>
           </div>
         </div>
 
@@ -271,9 +290,10 @@ export default function ProductDetailPage() {
             >
               <div>
                 <img
-                  src={getImageUrl(post.mainImageUrl || post.image)}
-                  alt={post.title}
-                />
+  src={getImageUrl(post.mainImageUrl || post.image)}
+  alt={post.title}
+  onError={(e) => (e.currentTarget.src = fallbackImage)}
+/>
               </div>
 
               <h4>{post.title}</h4>
@@ -316,7 +336,11 @@ function ProductSlider({ title, products = [], sale = false }) {
             >
               {sale && <span className={styles.saleBadge}>HOT SALE</span>}
 
-              <img src={getImageUrl(product.mainImageUrl)} alt={product.productName} />
+              <img
+  src={getImageUrl(product.mainImageUrl)}
+  alt={product.productName}
+  onError={(e) => (e.currentTarget.src = fallbackImage)}
+/>
 
               <h4>{product.productName}</h4>
 
