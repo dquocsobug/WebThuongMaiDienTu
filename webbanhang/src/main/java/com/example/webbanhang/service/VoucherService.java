@@ -52,6 +52,8 @@ public interface VoucherService {
     /** Cấp voucher cho một hoặc nhiều user. */
     void assignToUsers(AssignVoucherRequest request);
 
+    UserVoucherResponse rewardUserForApprovedPost(Integer userId, Integer postId);
+
     /** Lấy danh sách user được cấp voucher. */
     PageResponse<UserVoucherResponse> getUsersOfVoucher(Integer voucherId, Pageable pageable);
 }

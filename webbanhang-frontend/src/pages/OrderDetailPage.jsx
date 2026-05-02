@@ -189,7 +189,7 @@ export default function OrderDetailPage() {
                   </p>
 
                   <div className={styles.reviewActions}>
-                    <Link to="/posts/create">Viết bài trải nghiệm</Link>
+                    <Link to="/posts/my/create">Viết bài trải nghiệm</Link>
                     <Link to="/posts">Xem mẫu bài viết</Link>
                   </div>
                 </div>

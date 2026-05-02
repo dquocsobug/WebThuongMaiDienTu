@@ -18,6 +18,9 @@ const PromotionsPage = lazy(() => import("../pages/PromotionsPage"));
 const LoginPage = lazy(() => import("../pages/LoginPage"));
 const RegisterPage = lazy(() => import("../pages/RegisterPage"));
 const ProfilePage = lazy(() => import("../pages/ProfilePage"));
+const MyPostsPage = lazy(() => import("../pages/MyPostsPage"));
+const WriterPostPage = lazy(() => import("../pages/WriterPostPage"));
+const CreatePostPage = lazy(() => import("../pages/CreatePostPage"));
 const NotFoundPage = lazy(() => import("../pages/NotFoundPage"));
 
 // Admin pages
@@ -117,6 +120,30 @@ const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
+      {
+  path: "posts/my",
+  element: (
+    <ProtectedRoute>
+      {withSuspense(MyPostsPage)}
+    </ProtectedRoute>
+  ),
+},
+{
+  path: "posts/my/create",
+  element: (
+    <ProtectedRoute>
+      {withSuspense(CreatePostPage)}
+    </ProtectedRoute>
+  ),
+},
+{
+  path: "/writer",
+  element: (
+    <RoleRoute roles={["WRITER", "ADMIN"]}>
+      <WriterPostPage />
+    </RoleRoute>
+  ),
+},
       {
         path: "writer/*",
         element: (

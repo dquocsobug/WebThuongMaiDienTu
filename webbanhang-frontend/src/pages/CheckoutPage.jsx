@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { formatVND } from "../utils/format";
 import styles from "./CheckoutPage.module.css";
-import { cartApi, orderApi, userApi, productApi } from "../api";
+import { cartApi, orderApi, userApi, productApi, voucherApi } from "../api";
 
 const BANK_INFO = {
   bankId: "VCB",
@@ -37,6 +37,9 @@ export default function CheckoutPage() {
   const [shippingMethod, setShippingMethod] = useState("FAST");
   const [paymentMethod, setPaymentMethod] = useState("COD");
   const [couponCode, setCouponCode] = useState("");
+const [appliedVoucher, setAppliedVoucher] = useState(null);
+const [voucherMessage, setVoucherMessage] = useState("");
+const [applyingVoucher, setApplyingVoucher] = useState(false);
   const [loading, setLoading] = useState(true);
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState("");
@@ -59,8 +62,8 @@ export default function CheckoutPage() {
   );
 
   const shippingFee = shippingMethod === "FAST" ? 45000 : 0;
-  const discountAmount = 0;
-  const total = subtotal + shippingFee - discountAmount;
+  const discountAmount = Number(appliedVoucher?.discountAmount || 0);
+const total = Math.max(subtotal + shippingFee - discountAmount, 0);
 
   const orderName = useMemo(() => {
     if (!items.length) return "Thanh toan don hang";
@@ -181,6 +184,41 @@ export default function CheckoutPage() {
     }));
   };
 
+  const handleApplyVoucher = async () => {
+  setVoucherMessage("");
+  setError("");
+
+  if (!couponCode.trim()) {
+    setVoucherMessage("Vui lòng nhập mã voucher.");
+    return;
+  }
+
+  try {
+    setApplyingVoucher(true);
+
+    const data = await voucherApi.preview({
+      voucherCode: couponCode.trim().toUpperCase(),
+      orderAmount: subtotal + shippingFee,
+    });
+
+    setAppliedVoucher({
+      voucherCode: data.voucherCode,
+      voucherName: data.voucherName,
+      discountAmount: Number(data.discountAmount || 0),
+      finalAmount: Number(data.finalAmount || 0),
+    });
+
+    setVoucherMessage("Áp dụng voucher thành công.");
+  } catch (err) {
+    console.log("LỖI VOUCHER:", err.message);
+
+    setAppliedVoucher(null);
+    setVoucherMessage(err.message || "Voucher không hợp lệ hoặc đã hết hạn.");
+  } finally {
+    setApplyingVoucher(false);
+  }
+};
+
   const handlePlaceOrder = async () => {
     setError("");
 
@@ -203,18 +241,18 @@ export default function CheckoutPage() {
       setPlacing(true);
 
       const payload = {
-        receiverName: form.fullName,
-        receiverPhone: form.phone,
-        receiverEmail: form.email,
-        shippingAddress: form.address,
-        note: form.note,
-        shippingMethod,
-        paymentMethod,
-        couponCode: couponCode || null,
-        transferCode: paymentMethod === "BANK_TRANSFER" ? orderCode : null,
-        transferContent:
-          paymentMethod === "BANK_TRANSFER" ? transferContent : null,
-      };
+  receiverName: form.fullName,
+  receiverPhone: form.phone,
+  receiverEmail: form.email,
+  shippingAddress: form.address,
+  note: form.note,
+  shippingMethod,
+  paymentMethod,
+  voucherCode: appliedVoucher?.voucherCode || null,
+  transferCode: paymentMethod === "BANK_TRANSFER" ? orderCode : null,
+  transferContent:
+    paymentMethod === "BANK_TRANSFER" ? transferContent : null,
+};
 
       if (orderApi?.createOrder) {
         await orderApi.createOrder(payload);
@@ -379,13 +417,30 @@ export default function CheckoutPage() {
             </div>
 
             <div className={styles.coupon}>
-              <input
-                value={couponCode}
-                onChange={(e) => setCouponCode(e.target.value)}
-                placeholder="Mã giảm giá"
-              />
-              <button type="button">Áp dụng</button>
-            </div>
+  <input
+    value={couponCode}
+    onChange={(e) => {
+      setCouponCode(e.target.value);
+      setAppliedVoucher(null);
+      setVoucherMessage("");
+    }}
+    placeholder="Nhập mã voucher"
+  />
+
+  <button
+    type="button"
+    onClick={handleApplyVoucher}
+    disabled={applyingVoucher}
+  >
+    {applyingVoucher ? "Đang áp dụng..." : "Áp dụng"}
+  </button>
+</div>
+
+{voucherMessage && (
+  <div className={appliedVoucher ? styles.voucherSuccess : styles.voucherError}>
+    {voucherMessage}
+  </div>
+)}
 
             <div className={styles.priceTable}>
               <PriceRow label="Tạm tính" value={formatVND(subtotal)} />

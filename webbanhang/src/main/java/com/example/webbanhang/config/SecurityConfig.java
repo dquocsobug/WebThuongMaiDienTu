@@ -154,16 +154,21 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE,  "/promotions/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET,     "/promotions").hasRole("ADMIN")
 
-                        // ── ADMIN: Voucher management ──────────────────────────────
-                        .requestMatchers(HttpMethod.POST,
-                                "/vouchers",
-                                "/vouchers/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT,    "/vouchers/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE,  "/vouchers/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET,
-                                "/vouchers",
-                                "/vouchers/{voucherId:[0-9]+}",
-                                "/vouchers/{voucherId:[0-9]+}/users").hasRole("ADMIN")
+
+                                // ── USER: Voucher ───────────────────────────────────────────
+                                .requestMatchers(HttpMethod.GET, "/vouchers/my").authenticated()
+                                .requestMatchers(HttpMethod.POST, "/vouchers/preview").authenticated()
+
+                            // ── ADMIN: Voucher management ──────────────────────────────
+                                .requestMatchers(HttpMethod.POST,
+                                        "/vouchers",
+                                        "/vouchers/assign").hasRole("ADMIN")
+                                .requestMatchers(HttpMethod.PUT, "/vouchers/**").hasRole("ADMIN")
+                                .requestMatchers(HttpMethod.DELETE, "/vouchers/**").hasRole("ADMIN")
+                                .requestMatchers(HttpMethod.GET,
+                                        "/vouchers",
+                                        "/vouchers/{voucherId:[0-9]+}",
+                                        "/vouchers/{voucherId:[0-9]+}/users").hasRole("ADMIN")
 
                         // ── ADMIN: Order management ────────────────────────────────
                         .requestMatchers(HttpMethod.GET, "/orders").hasRole("ADMIN")

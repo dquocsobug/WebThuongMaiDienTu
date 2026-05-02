@@ -132,6 +132,55 @@ public class VoucherServiceImpl implements VoucherService {
     }
 
     @Override
+    @Transactional
+    public UserVoucherResponse rewardUserForApprovedPost(Integer userId, Integer postId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", userId));
+
+        String code = ("POST10_" + postId + "_" + userId).toUpperCase();
+
+        Voucher voucher = voucherRepository.findByVoucherCode(code)
+                .orElseGet(() -> {
+                    Voucher newVoucher = Voucher.builder()
+                            .voucherCode(code)
+                            .voucherName("Voucher thưởng bài viết được duyệt")
+                            .discountPercent(10)
+                            .discountAmount(null)
+                            .minOrderValue(BigDecimal.ZERO)
+                            .targetRole(user.getRole().name())
+                            .quantity(1)
+                            .startDate(LocalDateTime.now())
+                            .endDate(LocalDateTime.now().plusDays(30))
+                            .isActive(true)
+                            .build();
+
+                    return voucherRepository.save(newVoucher);
+                });
+
+        UserVoucher existed = userVoucherRepository
+                .findByUserUserIdAndVoucherVoucherId(userId, voucher.getVoucherId())
+                .orElse(null);
+
+        if (existed != null) {
+            return toUserVoucherResponse(existed);
+        }
+
+        UserVoucher userVoucher = UserVoucher.builder()
+                .user(user)
+                .voucher(voucher)
+                .isUsed(false)
+                .assignedAt(LocalDateTime.now())
+                .build();
+
+        userVoucherRepository.save(userVoucher);
+
+        log.info("[Voucher] Cấp voucher thưởng {} cho user {} vì bài viết {} được duyệt",
+                code, userId, postId);
+
+        return toUserVoucherResponse(userVoucher);
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public List<UserVoucherResponse> getMyVouchers(Integer userId) {
         return userVoucherRepository.findByUserUserIdOrderByAssignedAtDesc(userId)
@@ -401,8 +450,11 @@ public class VoucherServiceImpl implements VoucherService {
         if (StringUtils.hasText(request.getTargetRole())) {
             String role = request.getTargetRole();
 
-            if (!role.equals("CUSTOMER") && !role.equals("LOYAL_CUSTOMER")) {
-                throw new BadRequestException("TargetRole chỉ được là CUSTOMER hoặc LOYAL_CUSTOMER");
+            if (!role.equals("CUSTOMER")
+                    && !role.equals("LOYAL_CUSTOMER")
+                    && !role.equals("WRITER")
+                    && !role.equals("ADMIN")) {
+                throw new BadRequestException("TargetRole không hợp lệ");
             }
         }
     }

@@ -13,6 +13,7 @@ import com.example.webbanhang.exception.ForbiddenException;
 import com.example.webbanhang.exception.ResourceNotFoundException;
 import com.example.webbanhang.repository.*;
 import com.example.webbanhang.service.PostService;
+import com.example.webbanhang.service.VoucherService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -36,6 +37,7 @@ public class PostServiceImpl implements PostService {
     private final ProductImageRepository productImageRepository;
     private final CommentRepository commentRepository;
     private final UserRepository userRepository;
+    private final VoucherService voucherService;
 
     private PostSummaryResponse toSummaryResponse(Post post) {
         String mainImg = postImageRepository
@@ -397,6 +399,11 @@ public class PostServiceImpl implements PostService {
             post.setStatus(PostStatus.APPROVED);
             post.setApprovedAt(LocalDateTime.now());
             post.setRejectReason(null);
+
+            voucherService.rewardUserForApprovedPost(
+                    post.getCreatedBy().getUserId(),
+                    post.getPostId()
+            );
         } else {
             if (!StringUtils.hasText(request.getRejectionReason())) {
                 throw new BadRequestException("Vui lòng nhập lý do từ chối");

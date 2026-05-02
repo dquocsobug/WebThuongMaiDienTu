@@ -614,3 +614,22 @@
   font-size: 11px;
   line-height: 1.6;
 }
+.voucherSuccess {
+  margin-top: 8px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  background: #ecfdf5;
+  color: #047857;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.voucherError {
+  margin-top: 8px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  background: #fef2f2;
+  color: #dc2626;
+  font-size: 13px;
+  font-weight: 600;
+}
