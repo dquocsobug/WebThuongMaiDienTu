@@ -23,7 +23,6 @@ public interface VoucherRepository extends JpaRepository<Voucher, Integer> {
                OR LOWER(v.voucherCode) LIKE LOWER(CONCAT('%', :keyword, '%'))
                OR LOWER(v.voucherName) LIKE LOWER(CONCAT('%', :keyword, '%')))
           AND (:isActive IS NULL OR v.isActive = :isActive)
-        ORDER BY v.createdAt DESC
         """)
     Page<Voucher> findWithFilters(
             @Param("keyword") String keyword,

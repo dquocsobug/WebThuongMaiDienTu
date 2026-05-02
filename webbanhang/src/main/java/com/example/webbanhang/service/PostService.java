@@ -31,6 +31,8 @@ public interface PostService {
                                                   String keyword,
                                                   Pageable pageable);
 
+    PostResponse adminUpdate(Integer postId, PostRequest request);
+
     PostResponse reviewPost(Integer postId, ReviewPostRequest request);
 
     void adminDelete(Integer postId);

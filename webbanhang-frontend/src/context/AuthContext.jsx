@@ -1,27 +1,56 @@
-import { createContext, useContext, useState, useCallback } from "react";
+import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import { authApi } from "../api";
 import toast from "react-hot-toast";
 
 const AuthContext = createContext(null);
 
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(() => {
-    try {
-      const stored = localStorage.getItem("user");
-      return stored ? JSON.parse(stored) : null;
-    } catch {
-      localStorage.removeItem("user");
-      return null;
-    }
-  });
+const safeParseUser = () => {
+  try {
+    const stored = localStorage.getItem("user");
+    return stored ? JSON.parse(stored) : null;
+  } catch {
+    localStorage.removeItem("user");
+    return null;
+  }
+};
 
+const normalizeLoginResponse = (res) => {
+  const root = res?.data ?? res;
+  const payload = root?.data ?? root;
+
+  const token =
+    payload?.token ||
+    payload?.accessToken ||
+    payload?.jwt ||
+    root?.token ||
+    root?.accessToken ||
+    root?.jwt;
+
+  const user =
+    payload?.user ||
+    root?.user ||
+    {
+      userId: payload?.userId,
+      fullName: payload?.fullName,
+      email: payload?.email,
+      phone: payload?.phone,
+      address: payload?.address,
+      role: payload?.role,
+      roles: payload?.roles,
+    };
+
+  return { token, user };
+};
+
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(safeParseUser);
   const [loading, setLoading] = useState(false);
 
   const isAuthenticated = Boolean(localStorage.getItem("token"));
 
   const hasRole = useCallback(
     (role) => {
-      if (!user) return false;
+      if (!user || !role) return false;
 
       if (Array.isArray(user.roles)) {
         return user.roles.includes(role);
@@ -41,24 +70,16 @@ export const AuthProvider = ({ children }) => {
 
     try {
       const res = await authApi.login(credentials);
-
-const data = res?.data || res;
-
-const token = data?.token || data?.accessToken || data?.jwt;
-const loginUser = data?.user || {
-  userId: data?.userId,
-  email: data?.email,
-  fullName: data?.fullName,
-  role: data?.role,
-};
-
-if (!token) {
-  console.log("LOGIN RESPONSE =", res);
-  throw new Error("Backend không trả về token.");
-}
+      const { token, user: loginUser } = normalizeLoginResponse(res);
 
       if (!token) {
+        console.log("LOGIN RESPONSE =", res);
         throw new Error("Backend không trả về token.");
+      }
+
+      if (!loginUser || !loginUser.email) {
+        console.log("LOGIN USER RESPONSE =", res);
+        throw new Error("Backend không trả về thông tin user.");
       }
 
       localStorage.setItem("token", token);
@@ -66,9 +87,13 @@ if (!token) {
       setUser(loginUser);
 
       toast.success("Đăng nhập thành công!");
-      return { success: true };
+      return { success: true, user: loginUser };
     } catch (error) {
-      const message = error?.message || "Đăng nhập thất bại";
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Đăng nhập thất bại";
+
       toast.error(String(message));
       return { success: false, message: String(message) };
     } finally {
@@ -88,21 +113,20 @@ if (!token) {
     setUser(updatedUser);
   }, []);
 
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        loading,
-        isAuthenticated,
-        hasRole,
-        login,
-        logout,
-        updateUser,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo(
+    () => ({
+      user,
+      loading,
+      isAuthenticated,
+      hasRole,
+      login,
+      logout,
+      updateUser,
+    }),
+    [user, loading, isAuthenticated, hasRole, logout, updateUser]
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {

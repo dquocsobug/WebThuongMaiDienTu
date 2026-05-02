@@ -20,6 +20,17 @@ const RegisterPage = lazy(() => import("../pages/RegisterPage"));
 const ProfilePage = lazy(() => import("../pages/ProfilePage"));
 const NotFoundPage = lazy(() => import("../pages/NotFoundPage"));
 
+// Admin pages
+const AdminLayout = lazy(() => import("../components/admin/AdminLayout"));
+const AdminDashboardPage = lazy(() => import("../pages/admin/AdminDashboardPage"));
+const AdminUserPage = lazy(() => import("../pages/admin/AdminUserPage"));
+const AdminProductPage = lazy(() => import("../pages/admin/AdminProductPage"));
+const AdminCategoryPage = lazy(() => import("../pages/admin/AdminCategoryPage"));
+const AdminOrderPage = lazy(() => import("../pages/admin/AdminOrderPage"));
+const AdminPostPage = lazy(() => import("../pages/admin/AdminPostPage"));
+const AdminPromotionPage = lazy(() => import("../pages/admin/AdminPromotionPage"));
+const AdminVoucherPage = lazy(() => import("../pages/admin/AdminVoucherPage"));
+
 const withSuspense = (Component) => (
   <Suspense fallback={<PageLoader />}>
     <Component />
@@ -27,7 +38,6 @@ const withSuspense = (Component) => (
 );
 
 const router = createBrowserRouter([
-  // Trang auth không dùng Layout => không hiện Navbar/Footer
   {
     path: "/login",
     element: withSuspense(LoginPage),
@@ -37,7 +47,25 @@ const router = createBrowserRouter([
     element: withSuspense(RegisterPage),
   },
 
-  // Các trang chính có Layout => có Navbar/Footer
+  {
+    path: "/admin",
+    element: (
+      <RoleRoute roles={[ROLES.ADMIN]}>
+        {withSuspense(AdminLayout)}
+      </RoleRoute>
+    ),
+    children: [
+      { index: true, element: withSuspense(AdminDashboardPage) },
+      { path: "users", element: withSuspense(AdminUserPage) },
+      { path: "products", element: withSuspense(AdminProductPage) },
+      { path: "categories", element: withSuspense(AdminCategoryPage) },
+      { path: "orders", element: withSuspense(AdminOrderPage) },
+      { path: "posts", element: withSuspense(AdminPostPage) },
+      { path: "promotions", element: withSuspense(AdminPromotionPage) },
+      { path: "vouchers", element: withSuspense(AdminVoucherPage) },
+    ],
+  },
+
   {
     path: "/",
     element: <Layout />,
@@ -90,21 +118,11 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "admin/*",
-        element: (
-          <RoleRoute roles={[ROLES.ADMIN]}>
-            <div className="p-8 text-center text-gray-500">
-              Admin Dashboard (coming soon)
-            </div>
-          </RoleRoute>
-        ),
-      },
-      {
         path: "writer/*",
         element: (
           <RoleRoute roles={[ROLES.WRITER, ROLES.ADMIN]}>
             <div className="p-8 text-center text-gray-500">
-              Writer Dashboard (coming soon)
+              Writer Dashboard coming soon
             </div>
           </RoleRoute>
         ),

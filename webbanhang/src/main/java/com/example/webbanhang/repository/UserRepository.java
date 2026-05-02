@@ -17,19 +17,13 @@ import java.util.Optional;
 @Repository
 public interface UserRepository extends JpaRepository<User, Integer> {
 
-    // ── Tìm theo email ────────────────────────────────────────────────────────
-
     Optional<User> findByEmail(String email);
 
     boolean existsByEmail(String email);
 
-    // ── Tìm theo role ─────────────────────────────────────────────────────────
-
     List<User> findByRole(Role role);
 
     Page<User> findByRoleOrderByCreatedAtDesc(Role role, Pageable pageable);
-
-    // ── Tìm kiếm user (Admin) ─────────────────────────────────────────────────
 
     @Query("""
         SELECT u FROM User u
@@ -38,34 +32,28 @@ public interface UserRepository extends JpaRepository<User, Integer> {
                 OR LOWER(u.email)    LIKE LOWER(CONCAT('%', :keyword, '%'))
                 OR u.phone           LIKE CONCAT('%', :keyword, '%'))
           AND (:role IS NULL OR u.role = :role)
-        ORDER BY u.createdAt DESC
         """)
     Page<User> findWithFilters(
             @Param("keyword") String keyword,
-            @Param("role")    Role role,
-            Pageable pageable);
-
-    // ── Nâng cấp role ─────────────────────────────────────────────────────────
+            @Param("role") Role role,
+            Pageable pageable
+    );
 
     @Modifying
     @Query("UPDATE User u SET u.role = :role WHERE u.userId = :userId")
     void updateRole(
             @Param("userId") Integer userId,
-            @Param("role")   Role role);
-
-    // ── Tìm USER đủ điều kiện nâng cấp LOYAL_CUSTOMER ────────────────────────
-    // Điều kiện: đã có đơn DELIVERED tạo trước ngày cutoff (1 tháng trước)
+            @Param("role") Role role
+    );
 
     @Query("""
         SELECT DISTINCT u FROM User u
         JOIN u.orders o
-        WHERE u.role = 'USER'
+        WHERE u.role = 'CUSTOMER'
           AND o.status = 'DELIVERED'
           AND o.createdAt <= :cutoff
         """)
     List<User> findEligibleForLoyalUpgrade(@Param("cutoff") LocalDateTime cutoff);
-
-    // ── Đếm theo role (Dashboard Admin) ──────────────────────────────────────
 
     long countByRole(Role role);
 }

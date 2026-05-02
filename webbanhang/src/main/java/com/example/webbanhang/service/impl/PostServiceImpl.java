@@ -217,7 +217,7 @@ public class PostServiceImpl implements PostService {
     @Override
     @Transactional(readOnly = true)
     public PageResponse<PostSummaryResponse> getMyPosts(Integer userId, PostStatus status, Pageable pageable) {
-        Page<Post> page = status != null
+        Page<Post> page = (status != null)
                 ? postRepository.findByCreatedByUserIdAndStatus(userId, status, pageable)
                 : postRepository.findByCreatedByUserId(userId, pageable);
 
@@ -248,13 +248,20 @@ public class PostServiceImpl implements PostService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", userId));
 
+        PostStatus initialStatus =
+                user.getRole() == Role.ADMIN ? PostStatus.APPROVED : PostStatus.PENDING;
+
         Post post = Post.builder()
                 .title(request.getTitle())
                 .content(request.getContent())
                 .summary(request.getSummary())
                 .createdBy(user)
-                .status(PostStatus.PENDING)
+                .status(initialStatus)
                 .build();
+
+        if (user.getRole() == Role.ADMIN) {
+            post.setApprovedAt(LocalDateTime.now());
+        }
 
         postRepository.save(post);
 
@@ -349,6 +356,31 @@ public class PostServiceImpl implements PostService {
                 .toList();
 
         return PageResponse.of(page, content);
+    }
+
+    @Override
+    @Transactional
+    public PostResponse adminUpdate(Integer postId, PostRequest request) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResourceNotFoundException("Post", postId));
+
+        post.setTitle(request.getTitle());
+        post.setContent(request.getContent());
+        post.setSummary(request.getSummary());
+        post.setStatus(PostStatus.APPROVED);
+        post.setRejectReason(null);
+        post.setUpdatedAt(LocalDateTime.now());
+
+        if (post.getApprovedAt() == null) {
+            post.setApprovedAt(LocalDateTime.now());
+        }
+
+        postRepository.save(post);
+
+        syncImages(post, request.getImages());
+        syncProducts(post, request.getProducts());
+
+        return toFullResponse(post);
     }
 
     @Override

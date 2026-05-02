@@ -120,7 +120,17 @@ public class PostController {
         return ResponseEntity.ok(
                 ApiResponse.success(postService.adminGetAll(status, authorId, keyword, pageable)));
     }
-
+    // PUT /api/posts/{postId}
+    @PutMapping("/{postId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<PostResponse>> adminUpdate(
+            @PathVariable Integer postId,
+            @Valid @RequestBody PostRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(
+                "Admin cập nhật bài viết thành công",
+                postService.adminUpdate(postId, request)
+        ));
+    }
     // PATCH /api/posts/{postId}/review
     @PatchMapping("/{postId}/review")
     @PreAuthorize("hasRole('ADMIN')")
