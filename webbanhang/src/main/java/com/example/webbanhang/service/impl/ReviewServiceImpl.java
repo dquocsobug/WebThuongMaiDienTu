@@ -35,6 +35,20 @@ public class ReviewServiceImpl implements ReviewService {
 
     // ── Mapper ────────────────────────────────────────────────────────────────
 
+    private String getMainImageUrl(Product product) {
+        if (product == null || product.getImages() == null || product.getImages().isEmpty()) {
+            return null;
+        }
+
+        return product.getImages()
+                .stream()
+                .filter(img -> Boolean.TRUE.equals(img.getIsMain()))
+                .findFirst()
+                .or(() -> product.getImages().stream().findFirst())
+                .map(img -> img.getImageUrl())
+                .orElse(null);
+    }
+
     private ReviewResponse toResponse(Review review) {
         User u = review.getUser();
         return ReviewResponse.builder()
@@ -46,6 +60,7 @@ public class ReviewServiceImpl implements ReviewService {
                         .build())
                 .productId(review.getProduct().getProductId())
                 .productName(review.getProduct().getProductName())
+                .mainImageUrl(getMainImageUrl(review.getProduct()))
                 .rating(review.getRating())
                 .comment(review.getComment())
                 .createdAt(review.getCreatedAt())

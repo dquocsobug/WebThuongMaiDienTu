@@ -19,6 +19,7 @@ const LoginPage = lazy(() => import("../pages/LoginPage"));
 const RegisterPage = lazy(() => import("../pages/RegisterPage"));
 const ProfilePage = lazy(() => import("../pages/ProfilePage"));
 const MyPostsPage = lazy(() => import("../pages/MyPostsPage"));
+const MyReviewsPage = lazy(() => import("../pages/MyReviewsPage"));
 const WriterPostPage = lazy(() => import("../pages/WriterPostPage"));
 const CreatePostPage = lazy(() => import("../pages/CreatePostPage"));
 const NotFoundPage = lazy(() => import("../pages/NotFoundPage"));
@@ -125,6 +126,15 @@ const router = createBrowserRouter([
   element: (
     <ProtectedRoute>
       {withSuspense(MyPostsPage)}
+    </ProtectedRoute>
+  ),
+},
+
+{
+  path: "reviews/my",
+  element: (
+    <ProtectedRoute>
+      {withSuspense(MyReviewsPage)}
     </ProtectedRoute>
   ),
 },

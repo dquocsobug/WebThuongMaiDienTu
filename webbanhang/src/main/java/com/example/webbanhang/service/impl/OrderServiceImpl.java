@@ -124,13 +124,29 @@ public class OrderServiceImpl implements OrderService {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", userId));
+        String paymentMethod = request.getPaymentMethod();
 
+        if (!StringUtils.hasText(paymentMethod)) {
+            throw new BadRequestException("Vui lòng chọn phương thức thanh toán");
+        }
+
+        paymentMethod = paymentMethod.trim().toUpperCase();
+
+        log.info("[Order] paymentMethod received='{}', normalized='{}'",
+                request.getPaymentMethod(),
+                paymentMethod);
+
+        if (!paymentMethod.equals("COD")
+                && !paymentMethod.equals("MOMO")
+                && !paymentMethod.equals("BANK_TRANSFER")) {
+            throw new BadRequestException("Phương thức thanh toán không hợp lệ: " + paymentMethod);
+        }
         Order order = Order.builder()
                 .user(user)
                 .receiverName(request.getReceiverName())
                 .receiverPhone(request.getReceiverPhone())
                 .shippingAddress(request.getShippingAddress())
-                .paymentMethod(request.getPaymentMethod())
+                .paymentMethod(request.getPaymentMethod().trim().toUpperCase())
                 .paymentStatus(PaymentStatus.UNPAID)
                 .status(OrderStatus.PENDING)
                 .note(request.getNote())
@@ -138,7 +154,7 @@ public class OrderServiceImpl implements OrderService {
                 .discountAmount(BigDecimal.ZERO)
                 .finalAmount(BigDecimal.ZERO)
                 .build();
-
+        log.info("[Order] paymentMethod received = '{}'", request.getPaymentMethod());
         orderRepository.save(order);
 
         BigDecimal rawTotal = BigDecimal.ZERO;

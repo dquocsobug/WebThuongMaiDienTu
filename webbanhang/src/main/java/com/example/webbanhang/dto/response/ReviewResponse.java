@@ -16,4 +16,5 @@ public class ReviewResponse {
     private final Integer             rating;
     private final String              comment;
     private final LocalDateTime       createdAt;
+    private final String mainImageUrl;
 }

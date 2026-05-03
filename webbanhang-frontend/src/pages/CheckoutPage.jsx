@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { formatVND } from "../utils/format";
 import styles from "./CheckoutPage.module.css";
-import { cartApi, orderApi, userApi, productApi, voucherApi } from "../api";
+import { cartApi, orderApi, userApi, productApi, voucherApi, paymentApi } from "../api";
 
 const BANK_INFO = {
   bankId: "VCB",
@@ -254,15 +254,28 @@ const total = Math.max(subtotal + shippingFee - discountAmount, 0);
     paymentMethod === "BANK_TRANSFER" ? transferContent : null,
 };
 
-      if (orderApi?.createOrder) {
-        await orderApi.createOrder(payload);
-      } else if (orderApi?.placeOrder) {
-        await orderApi.placeOrder(payload);
-      } else {
-        await orderApi.create(payload);
-      }
+      let createdOrder;
 
-      navigate("/orders", { replace: true });
+if (orderApi?.createOrder) {
+  createdOrder = await orderApi.createOrder(payload);
+} else if (orderApi?.placeOrder) {
+  createdOrder = await orderApi.placeOrder(payload);
+} else {
+  createdOrder = await orderApi.create(payload);
+}
+
+// 👉 Nếu chọn MoMo thì redirect
+if (paymentMethod === "MOMO") {
+  const momoData = await paymentApi.createMomoPayment({
+    orderId: createdOrder.orderId,
+  });
+
+  window.location.href = momoData.payUrl;
+  return;
+}
+
+// 👉 Nếu không phải MoMo thì đi bình thường
+navigate("/orders", { replace: true });
     } catch (err) {
       console.error("Lỗi đặt hàng:", err);
       setError(err?.response?.data?.message || "Đặt hàng thất bại");
@@ -390,12 +403,17 @@ const total = Math.max(subtotal + shippingFee - discountAmount, 0);
               />
 
               <PaymentOption
-                active={paymentMethod === "EWALLET"}
-                icon="▦"
-                title="Ví điện tử MoMo / ZaloPay"
-                onClick={() => setPaymentMethod("EWALLET")}
-              />
-
+  active={paymentMethod === "MOMO"}
+  icon={
+    <img
+      src="/images/momo.png"
+      alt="MoMo"
+      style={{ width: 24, height: 24, objectFit: "contain" }}
+    />
+  }
+  title="Thanh toán MoMo"
+  onClick={() => setPaymentMethod("MOMO")}
+/>
               <PaymentOption
                 active={paymentMethod === "COD"}
                 icon="🚚"

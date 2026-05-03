@@ -214,3 +214,9 @@ export const voucherApi = {
 
   getUsers: (voucherId) => axiosClient.get(`/vouchers/${voucherId}/users`),
 };
+
+//--- MOMO-------------------------------------
+export const paymentApi = {
+  createMomoPayment: (payload) =>
+    axiosClient.post("/payments/momo/create", payload),
+};

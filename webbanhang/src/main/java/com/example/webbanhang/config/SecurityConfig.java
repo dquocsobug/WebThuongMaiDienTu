@@ -197,6 +197,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/posts/my/**")
                         .hasAnyRole("WRITER", "LOYAL_CUSTOMER", "ADMIN")
 
+                        .requestMatchers(HttpMethod.POST, "/payments/momo/create").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/payments/momo/ipn").permitAll()
                         // ── Đã đăng nhập: tất cả còn lại ─────────────────────────
                         .anyRequest().authenticated()
                 )

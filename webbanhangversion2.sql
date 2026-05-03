@@ -916,8 +916,8 @@ FROM Users
 WHERE Email = 'admin@gmail.com';
 
 UPDATE Users
-SET Password = '$2a$10$aPfg88DgwZls4fDehjtfz.WOCvYKQ8iOrLh9wADB.WK3AnBsK60Mi'
-WHERE Email = 'writer@gmail.com';
+SET Password = '$2a$10$f7HTUFmzbvX0rIIFz/YYxO0OoFgeusSzBfHyqjf3SeTQSU/mHPGfa'
+WHERE Email = 'user2@gmail.com';
 
 UPDATE Posts
 SET 
@@ -926,4 +926,95 @@ SET
     ApprovedAt = GETDATE(),
     RejectReason = NULL
 WHERE Status = 'PENDING';
+GO
+
+USE WebBanHang;
+GO
+
+-- 1. Tạo voucher cho các bài APPROVED của CUSTOMER / LOYAL_CUSTOMER
+INSERT INTO Vouchers (
+    VoucherCode,
+    VoucherName,
+    DiscountPercent,
+    DiscountAmount,
+    MinOrderValue,
+    TargetRole,
+    Quantity,
+    StartDate,
+    EndDate,
+    IsActive
+)
+SELECT
+    CONCAT('POST10_', p.PostID, '_', p.CreatedBy),
+    N'Voucher thưởng bài viết được duyệt',
+    10,
+    NULL,
+    0,
+    u.Role,
+    1,
+    GETDATE(),
+    DATEADD(DAY, 30, GETDATE()),
+    1
+FROM Posts p
+JOIN Users u ON u.UserID = p.CreatedBy
+WHERE p.Status = 'APPROVED'
+  AND u.Role IN ('CUSTOMER', 'LOYAL_CUSTOMER')
+  AND NOT EXISTS (
+      SELECT 1
+      FROM Vouchers v
+      WHERE v.VoucherCode = CONCAT('POST10_', p.PostID, '_', p.CreatedBy)
+  );
+GO
+
+-- 2. Gán voucher cho đúng user viết bài
+INSERT INTO UserVouchers (
+    UserID,
+    VoucherID,
+    IsUsed,
+    AssignedAt
+)
+SELECT
+    p.CreatedBy,
+    v.VoucherID,
+    0,
+    GETDATE()
+FROM Posts p
+JOIN Users u ON u.UserID = p.CreatedBy
+JOIN Vouchers v 
+    ON v.VoucherCode = CONCAT('POST10_', p.PostID, '_', p.CreatedBy)
+WHERE p.Status = 'APPROVED'
+  AND u.Role IN ('CUSTOMER', 'LOYAL_CUSTOMER')
+  AND NOT EXISTS (
+      SELECT 1
+      FROM UserVouchers uv
+      WHERE uv.UserID = p.CreatedBy
+        AND uv.VoucherID = v.VoucherID
+  );
+GO
+
+USE WebBanHang;
+GO
+
+-- Xem constraint PaymentMethod hiện tại
+SELECT name, definition
+FROM sys.check_constraints
+WHERE parent_object_id = OBJECT_ID('Orders')
+  AND definition LIKE '%PaymentMethod%';
+GO
+
+ALTER TABLE Orders
+DROP CONSTRAINT CK__Orders__PaymentM__73BA3083;
+GO
+
+ALTER TABLE Orders
+ADD CONSTRAINT CK_Orders_PaymentMethod
+CHECK (PaymentMethod IN ('COD', 'MOMO', 'BANK_TRANSFER'));
+GO
+
+USE WebBanHang;
+GO
+
+SELECT name, definition
+FROM sys.check_constraints
+WHERE name = 'CK_Orders_PaymentMethod';
 GO
