@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { formatVND } from "../utils/format";
 import styles from "./CheckoutPage.module.css";
 import { cartApi, orderApi, userApi, productApi, voucherApi, paymentApi } from "../api";
@@ -31,7 +31,9 @@ const createVietQrUrl = ({ amount, content }) => {
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
-
+  const location = useLocation();
+const directData = location.state;
+const isDirect = directData?.mode === "DIRECT";
   const [cart, setCart] = useState(null);
   const [user, setUser] = useState(null);
   const [shippingMethod, setShippingMethod] = useState("FAST");
@@ -54,7 +56,22 @@ const [applyingVoucher, setApplyingVoucher] = useState(false);
 
   const orderCode = useMemo(() => `DH${Date.now()}`, []);
 
-  const items = cart?.items || [];
+  const items = isDirect
+  ? [
+      {
+        cartItemId: `direct-${directData.productId}`,
+        product: directData.product,
+        quantity: directData.quantity || 1,
+        subtotal:
+          Number(
+            directData.product?.discountedPrice &&
+              directData.product?.discountedPrice < directData.product?.price
+              ? directData.product.discountedPrice
+              : directData.product?.price || 0
+          ) * Number(directData.quantity || 1),
+      },
+    ]
+  : cart?.items || [];
 
   const subtotal = Number(
     cart?.totalAmount ??
@@ -256,12 +273,14 @@ const total = Math.max(subtotal + shippingFee - discountAmount, 0);
 
       let createdOrder;
 
-if (orderApi?.createOrder) {
-  createdOrder = await orderApi.createOrder(payload);
-} else if (orderApi?.placeOrder) {
-  createdOrder = await orderApi.placeOrder(payload);
+if (isDirect) {
+  createdOrder = await orderApi.createDirectOrder({
+    ...payload,
+    productId: directData.productId,
+    quantity: directData.quantity || 1,
+  });
 } else {
-  createdOrder = await orderApi.create(payload);
+  createdOrder = await orderApi.createOrder(payload);
 }
 
 // 👉 Nếu chọn MoMo thì redirect
@@ -297,7 +316,7 @@ navigate("/orders", { replace: true });
       <main className={styles.page}>
         <div className={styles.empty}>
           <h1>Không có sản phẩm để thanh toán</h1>
-          <p>Giỏ hàng của bạn đang trống.</p>
+          <p>{isDirect ? "Không tìm thấy sản phẩm mua ngay." : "Giỏ hàng của bạn đang trống."}</p>
           <Link to="/products">Quay lại mua sắm</Link>
         </div>
       </main>

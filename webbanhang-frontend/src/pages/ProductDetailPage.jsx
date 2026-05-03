@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { productApi, postApi } from "../api";
 import { useCart } from "../context/CartContext";
 import { formatVND } from "../utils/format";
@@ -34,7 +34,7 @@ const getDiscount = (product) => {
 export default function ProductDetailPage() {
   const { id } = useParams();
   const productId = id;
-
+const navigate = useNavigate();
   const { addToCart } = useCart();
 
   const [product, setProduct] = useState(null);
@@ -123,7 +123,16 @@ export default function ProductDetailPage() {
       setAdding(false);
     }
   };
-
+  const handleBuyNow = () => {
+  navigate("/checkout", {
+    state: {
+      mode: "DIRECT",
+      productId: product.productId,
+      quantity: 1,
+      product,
+    },
+  });
+};
   return (
     <main className={styles.page}>
       <section className={styles.hero}>
@@ -185,9 +194,9 @@ export default function ProductDetailPage() {
           </div>
 
           <div className={styles.actions}>
-            <Link to="/checkout" className={styles.buyBtn}>
-              Mua ngay
-            </Link>
+            <button type="button" onClick={handleBuyNow} className={styles.buyBtn}>
+  Mua ngay
+</button>
 
             <button type="button" onClick={handleAddToCart} className={styles.cartBtn}>
               <span>🛒</span>

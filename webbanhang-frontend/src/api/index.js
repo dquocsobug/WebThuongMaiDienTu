@@ -100,6 +100,8 @@ export const orderApi = {
 
   createOrder: (payload) => axiosClient.post("/orders", payload),
 
+  createDirectOrder: (payload) => axiosClient.post("/orders/direct", payload),
+
   cancelOrder: (id) => axiosClient.patch(`/orders/my/${id}/cancel`),
 
   getAll: (params) => axiosClient.get("/orders", { params }),

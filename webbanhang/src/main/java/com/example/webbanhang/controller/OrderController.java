@@ -1,5 +1,6 @@
 package com.example.webbanhang.controller;
 
+import com.example.webbanhang.dto.request.DirectOrderRequest;
 import com.example.webbanhang.dto.request.PlaceOrderRequest;
 import com.example.webbanhang.dto.request.UpdateOrderStatusRequest;
 import com.example.webbanhang.dto.response.*;
@@ -57,6 +58,21 @@ public class OrderController {
             @PathVariable Integer orderId) {
         return ResponseEntity.ok(ApiResponse.success(
                 orderService.getOrderDetail(SecurityUtil.getCurrentUserId(), orderId)));
+    }
+
+    @PostMapping("/direct")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<OrderResponse>> placeDirectOrder(
+            @Valid @RequestBody DirectOrderRequest request) {
+
+        OrderResponse data = orderService.placeDirectOrder(
+                SecurityUtil.getCurrentUserId(),
+                request
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Mua hàng trực tiếp thành công", data));
     }
 
     // PATCH /api/orders/my/{orderId}/cancel

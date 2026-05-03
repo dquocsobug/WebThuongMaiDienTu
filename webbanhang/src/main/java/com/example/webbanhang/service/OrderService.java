@@ -1,5 +1,6 @@
 package com.example.webbanhang.service;
 
+import com.example.webbanhang.dto.request.DirectOrderRequest;
 import com.example.webbanhang.dto.request.PlaceOrderRequest;
 import com.example.webbanhang.dto.request.UpdateOrderStatusRequest;
 import com.example.webbanhang.dto.response.OrderResponse;
@@ -7,13 +8,19 @@ import com.example.webbanhang.dto.response.OrderSummaryResponse;
 import com.example.webbanhang.dto.response.PageResponse;
 import com.example.webbanhang.enums.OrderStatus;
 import org.springframework.data.domain.Pageable;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
 public interface OrderService {
 
+    @Transactional
+
     /** Đặt hàng từ giỏ hàng hiện tại. */
     OrderResponse placeOrder(Integer userId, PlaceOrderRequest request);
+
+    /** Mua hàng trực tiếp không thông qua giỏ hàng. */
+    OrderResponse placeDirectOrder(Integer userId, DirectOrderRequest request);
 
     /** Lấy danh sách đơn hàng của user đang đăng nhập. */
     PageResponse<OrderSummaryResponse> getMyOrders(Integer userId, Pageable pageable);

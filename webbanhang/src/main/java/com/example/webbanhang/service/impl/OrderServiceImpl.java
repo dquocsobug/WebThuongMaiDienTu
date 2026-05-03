@@ -1,5 +1,6 @@
 package com.example.webbanhang.service.impl;
 
+import com.example.webbanhang.dto.request.DirectOrderRequest;
 import com.example.webbanhang.dto.request.PlaceOrderRequest;
 import com.example.webbanhang.dto.request.UpdateOrderStatusRequest;
 import com.example.webbanhang.dto.response.*;
@@ -110,6 +111,92 @@ public class OrderServiceImpl implements OrderService {
                 .createdAt(order.getCreatedAt())
                 .build();
     }
+
+    @Transactional
+    @Override
+    public OrderResponse placeDirectOrder(Integer userId, DirectOrderRequest request) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", userId));
+
+        Product product = productRepository.findById(request.getProductId())
+                .orElseThrow(() -> new ResourceNotFoundException("Product", request.getProductId()));
+
+        int quantity = request.getQuantity();
+
+        if (quantity <= 0) {
+            throw new BadRequestException("Số lượng sản phẩm không hợp lệ");
+        }
+
+        String paymentMethod = request.getPaymentMethod();
+
+        if (!StringUtils.hasText(paymentMethod)) {
+            throw new BadRequestException("Vui lòng chọn phương thức thanh toán");
+        }
+
+        paymentMethod = paymentMethod.trim().toUpperCase();
+
+        if (!paymentMethod.equals("COD")
+                && !paymentMethod.equals("MOMO")
+                && !paymentMethod.equals("BANK_TRANSFER")) {
+            throw new BadRequestException("Phương thức thanh toán không hợp lệ: " + paymentMethod);
+        }
+
+        int updated = productRepository.decreaseStock(product.getProductId(), quantity);
+
+        if (updated == 0) {
+            throw new BadRequestException(
+                    "Sản phẩm '" + product.getProductName() + "' không đủ tồn kho"
+            );
+        }
+
+        BigDecimal unitPrice = product.getPrice();
+        BigDecimal rawTotal = unitPrice.multiply(BigDecimal.valueOf(quantity));
+
+        BigDecimal discountAmount = BigDecimal.ZERO;
+        BigDecimal finalAmount = rawTotal;
+
+        if (StringUtils.hasText(request.getVoucherCode())) {
+            discountAmount = voucherService.calculateDiscount(
+                    userId,
+                    request.getVoucherCode(),
+                    rawTotal
+            );
+
+            finalAmount = rawTotal.subtract(discountAmount).max(BigDecimal.ZERO);
+
+            voucherService.markVoucherUsed(userId, request.getVoucherCode());
+        }
+
+        Order order = Order.builder()
+                .user(user)
+                .receiverName(request.getReceiverName())
+                .receiverPhone(request.getReceiverPhone())
+                .shippingAddress(request.getShippingAddress())
+                .paymentMethod(paymentMethod)
+                .paymentStatus(PaymentStatus.UNPAID)
+                .status(OrderStatus.PENDING)
+                .note(request.getNote())
+                .totalAmount(rawTotal)
+                .discountAmount(discountAmount)
+                .finalAmount(finalAmount)
+                .build();
+
+        orderRepository.save(order);
+
+        OrderDetail detail = OrderDetail.builder()
+                .order(order)
+                .product(product)
+                .quantity(quantity)
+                .unitPrice(unitPrice)
+                .subtotal(rawTotal)
+                .build();
+
+        orderDetailRepository.save(detail);
+
+        return toResponse(order);
+    }
+
 
     @Override
     @Transactional
