@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
+import { useCart } from "../context/CartContext";
 import styles from "./ProductsListPage.module.css";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -15,18 +16,31 @@ const StarRating = ({ rating }) => (
 );
 
 const getImageUrl = (url) => {
-  if (!url) return "/images/placeholder.png"; // fallback nếu null
-
-  // Nếu backend trả full link thì dùng luôn
+  if (!url) return "/images/placeholder.png";
   if (url.startsWith("http")) return url;
-
-  // Nếu bạn dùng public/images
   return `/images/${url}`;
 };
 
 // ─── Product Card ─────────────────────────────────────────────────────────────
 const ProductCard = ({ product }) => {
   const hasDiscount = product.discountedPrice && product.discountedPrice < product.price;
+  const { addToCart } = useCart?.() || {};
+  const [adding, setAdding] = useState(false);
+  const [added, setAdded] = useState(false);
+
+  const handleAddToCart = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!addToCart) return;
+    try {
+      setAdding(true);
+      await addToCart(product.productId, 1);
+      setAdded(true);
+      setTimeout(() => setAdded(false), 1800);
+    } finally {
+      setAdding(false);
+    }
+  };
 
   return (
     <Link to={`/products/${product.productId}`} className={styles.card}>
@@ -38,17 +52,49 @@ const ProductCard = ({ product }) => {
           <div className={styles.cardOutOfStock}>Hết hàng</div>
         )}
         <img
-  src={getImageUrl(product.mainImageUrl)}
+          src={getImageUrl(product.mainImageUrl)}
           alt={product.productName}
           className={styles.cardImage}
           loading="lazy"
         />
+
+        {/* Hover overlay */}
+        <div className={styles.cardOverlay}>
+          <div className={styles.overlayActions}>
+            <span className={styles.overlayBtn} title="Xem chi tiết">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </span>
+            <button
+              className={`${styles.overlayBtn} ${added ? styles.overlayBtnAdded : ""}`}
+              title="Thêm vào giỏ hàng"
+              onClick={handleAddToCart}
+              disabled={adding || product.stock === 0}
+            >
+              {added ? (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              ) : (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                </svg>
+              )}
+            </button>
+          </div>
+        </div>
       </div>
+
       <div className={styles.cardBody}>
         <span className={styles.cardCategory}>{product.categoryName}</span>
         <h3 className={styles.cardName}>{product.productName}</h3>
-        <StarRating rating={product.averageRating} />
-        <span className={styles.cardReviewCount}>{product.reviewCount} đánh giá</span>
+        <div className={styles.cardMeta}>
+          <StarRating rating={product.averageRating} />
+          <span className={styles.cardReviewCount}>({product.reviewCount})</span>
+        </div>
         <div className={styles.cardPricing}>
           {hasDiscount ? (
             <>
@@ -59,6 +105,9 @@ const ProductCard = ({ product }) => {
             <span className={styles.priceNew}>{formatPrice(product.price)}</span>
           )}
         </div>
+        {product.stock > 0 && product.stock <= 5 && (
+          <span className={styles.lowStock}>Chỉ còn {product.stock} sản phẩm</span>
+        )}
       </div>
     </Link>
   );
@@ -73,7 +122,6 @@ const PriceRangeInput = ({ min, max, value, onChange }) => {
   useEffect(() => { setLocalMin(value[0]); setLocalMax(value[1]); }, [value]);
 
   const toPercent = (v) => ((v - min) / (max - min)) * 100;
-
   const commitChange = () => onChange([localMin, localMax]);
 
   return (
@@ -140,7 +188,6 @@ const PRICE_MAX = 50000000;
 export default function ProductsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Filter state — khởi tạo từ URL params
   const [keyword, setKeyword] = useState(searchParams.get("keyword") || "");
   const [selectedCategories, setSelectedCategories] = useState(
     searchParams.get("categoryId") ? [Number(searchParams.get("categoryId"))] : []
@@ -151,8 +198,8 @@ export default function ProductsPage() {
   ]);
   const [sort, setSort] = useState(searchParams.get("sort") || "");
   const [page, setPage] = useState(0);
+  const [viewMode, setViewMode] = useState("grid"); // grid | list
 
-  // Data state
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [totalPages, setTotalPages] = useState(0);
@@ -160,12 +207,10 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true);
   const [catLoading, setCatLoading] = useState(true);
 
-  // UI state
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [inputValue, setInputValue] = useState(keyword);
   const debounceRef = useRef(null);
 
-  // Fetch categories — GET /categories
   useEffect(() => {
     axiosClient.get("/categories")
       .then((res) => {
@@ -176,7 +221,6 @@ export default function ProductsPage() {
       .finally(() => setCatLoading(false));
   }, []);
 
-  // Fetch products — GET /products
   const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
@@ -201,7 +245,6 @@ export default function ProductsPage() {
 
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
 
-  // Sync URL params
   useEffect(() => {
     const p = {};
     if (keyword) p.keyword = keyword;
@@ -213,7 +256,6 @@ export default function ProductsPage() {
     setSearchParams(p, { replace: true });
   }, [keyword, selectedCategories, priceRange, sort, page]);
 
-  // Keyword debounce
   const handleKeywordChange = (e) => {
     setInputValue(e.target.value);
     clearTimeout(debounceRef.current);
@@ -231,7 +273,6 @@ export default function ProductsPage() {
   };
 
   const handleSortChange = (e) => { setSort(e.target.value); setPage(0); };
-
   const handlePriceChange = (range) => { setPriceRange(range); setPage(0); };
 
   const handleClearFilters = () => {
@@ -255,7 +296,6 @@ export default function ProductsPage() {
 
   return (
     <div className={styles.page}>
-      {/* ── Overlay mobile sidebar ── */}
       {sidebarOpen && (
         <div className={styles.overlay} onClick={() => setSidebarOpen(false)} />
       )}
@@ -291,6 +331,30 @@ export default function ProductsPage() {
                 <option key={o.value} value={o.value}>{o.label}</option>
               ))}
             </select>
+
+            {/* View mode toggle */}
+            <div className={styles.viewToggle}>
+              <button
+                className={`${styles.viewBtn} ${viewMode === "grid" ? styles.viewBtnActive : ""}`}
+                onClick={() => setViewMode("grid")}
+                title="Lưới"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+                  <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+                </svg>
+              </button>
+              <button
+                className={`${styles.viewBtn} ${viewMode === "list" ? styles.viewBtnActive : ""}`}
+                onClick={() => setViewMode("list")}
+                title="Danh sách"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <rect x="3" y="4" width="18" height="3" rx="1"/><rect x="3" y="10.5" width="18" height="3" rx="1"/><rect x="3" y="17" width="18" height="3" rx="1"/>
+                </svg>
+              </button>
+            </div>
+
             <button
               className={`${styles.filterToggleBtn} ${sidebarOpen ? styles.filterToggleBtnActive : ""}`}
               onClick={() => setSidebarOpen((v) => !v)}
@@ -320,7 +384,6 @@ export default function ProductsPage() {
             </div>
           </div>
 
-          {/* Danh mục */}
           <div className={styles.filterSection}>
             <h3 className={styles.filterLabel}>Danh mục</h3>
             {catLoading ? (
@@ -350,7 +413,6 @@ export default function ProductsPage() {
             )}
           </div>
 
-          {/* Khoảng giá */}
           <div className={styles.filterSection}>
             <h3 className={styles.filterLabel}>Khoảng giá</h3>
             <PriceRangeInput
@@ -361,7 +423,6 @@ export default function ProductsPage() {
             />
           </div>
 
-          {/* Nút áp dụng mobile */}
           <div className={styles.sidebarApply}>
             <button className={styles.applyBtn} onClick={() => setSidebarOpen(false)}>
               Xem {totalElements} sản phẩm
@@ -371,7 +432,6 @@ export default function ProductsPage() {
 
         {/* ── MAIN CONTENT ── */}
         <main className={styles.main}>
-          {/* Result info */}
           <div className={styles.resultBar}>
             {loading ? (
               <span className={styles.resultText}>Đang tải...</span>
@@ -382,7 +442,6 @@ export default function ProductsPage() {
               </span>
             )}
 
-            {/* Active filter chips */}
             <div className={styles.filterChips}>
               {selectedCategories.length > 0 && categories
                 .filter(c => selectedCategories.includes(c.categoryId))
@@ -407,7 +466,7 @@ export default function ProductsPage() {
             </div>
           </div>
 
-          {/* Product grid */}
+          {/* Product grid / list */}
           {loading ? (
             <div className={styles.grid}>
               {Array.from({ length: 12 }).map((_, i) => <SkeletonCard key={i} />)}
@@ -420,24 +479,15 @@ export default function ProductsPage() {
               <button className={styles.emptyBtn} onClick={handleClearFilters}>Xoá bộ lọc</button>
             </div>
           ) : (
-            <div className={styles.grid}>
+            <div className={`${styles.grid} ${viewMode === "list" ? styles.gridList : ""}`}>
               {products.map((p) => <ProductCard key={p.productId} product={p} />)}
             </div>
           )}
 
-          {/* Pagination */}
           {totalPages > 1 && (
             <div className={styles.pagination}>
-              <button
-                className={styles.pageBtn}
-                disabled={page === 0}
-                onClick={() => setPage(0)}
-              >«</button>
-              <button
-                className={styles.pageBtn}
-                disabled={page === 0}
-                onClick={() => setPage((p) => p - 1)}
-              >‹</button>
+              <button className={styles.pageBtn} disabled={page === 0} onClick={() => setPage(0)}>«</button>
+              <button className={styles.pageBtn} disabled={page === 0} onClick={() => setPage((p) => p - 1)}>‹</button>
 
               {Array.from({ length: totalPages }, (_, i) => i)
                 .filter(i => Math.abs(i - page) <= 2)
@@ -449,16 +499,8 @@ export default function ProductsPage() {
                   >{i + 1}</button>
                 ))}
 
-              <button
-                className={styles.pageBtn}
-                disabled={page >= totalPages - 1}
-                onClick={() => setPage((p) => p + 1)}
-              >›</button>
-              <button
-                className={styles.pageBtn}
-                disabled={page >= totalPages - 1}
-                onClick={() => setPage(totalPages - 1)}
-              >»</button>
+              <button className={styles.pageBtn} disabled={page >= totalPages - 1} onClick={() => setPage((p) => p + 1)}>›</button>
+              <button className={styles.pageBtn} disabled={page >= totalPages - 1} onClick={() => setPage(totalPages - 1)}>»</button>
             </div>
           )}
         </main>

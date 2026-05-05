@@ -15,16 +15,11 @@ const productImgFallback = (e) =>
 
 const getImageUrl = (url) => {
   if (!url) return "https://placehold.co/600x400";
-
   if (url.startsWith("http")) return url;
-
   if (url.startsWith("/images")) return url;
-
   return `/images/${url}`;
 };
-/**
- * Scroll-reveal hook — element fades in once it enters viewport.
- */
+
 function useReveal() {
   const ref = useRef(null);
   const [visible, setVisible] = useState(false);
@@ -33,10 +28,7 @@ function useReveal() {
     if (!el) return;
     const obs = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
-          setVisible(true);
-          obs.disconnect();
-        }
+        if (entry.isIntersecting) { setVisible(true); obs.disconnect(); }
       },
       { threshold: 0.1 }
     );
@@ -46,8 +38,7 @@ function useReveal() {
   return [ref, visible];
 }
 
-// ─── Mock data — hiển thị ngay khi API chưa trả về ───────────────────────────
-// Cấu trúc theo đúng response backend thực tế
+// ─── Mock data ────────────────────────────────────────────────────────────────
 
 const MOCK_POSTS = [
   {
@@ -56,7 +47,7 @@ const MOCK_POSTS = [
     summary: "Danh sách tai nghe nổi bật năm 2026 dành cho sinh viên và dân văn phòng.",
     mainImageUrl: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=900&q=80",
     commentCount: 48,
-    author: { userId: 1, fullName: "Quản trị viên", email: "admin@gmail.com" },
+    author: { userId: 1, fullName: "Quản trị viên" },
     status: "APPROVED",
   },
   {
@@ -65,7 +56,7 @@ const MOCK_POSTS = [
     summary: "Trải nghiệm thực tế sau khi dùng AirPods Pro 2 trong học tập và giải trí.",
     mainImageUrl: "https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=900&q=80",
     commentCount: 31,
-    author: { userId: 2, fullName: "Nguyễn Văn A", email: "user1@gmail.com" },
+    author: { userId: 2, fullName: "Nguyễn Văn A" },
     status: "APPROVED",
   },
   {
@@ -74,7 +65,7 @@ const MOCK_POSTS = [
     summary: "Sau 2 năm ra mắt, chiếc tai nghe flagship của Sony vẫn giữ ngôi vương phân khúc chống ồn.",
     mainImageUrl: "https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=900&q=80",
     commentCount: 22,
-    author: { userId: 1, fullName: "Quản trị viên", email: "admin@gmail.com" },
+    author: { userId: 1, fullName: "Quản trị viên" },
     status: "APPROVED",
   },
   {
@@ -83,7 +74,7 @@ const MOCK_POSTS = [
     summary: "Latency, chất âm, tiện lợi — bên nào thắng trong cuộc chiến năm 2026?",
     mainImageUrl: "https://images.unsplash.com/photo-1484704849700-f032a568e944?w=900&q=80",
     commentCount: 17,
-    author: { userId: 1, fullName: "Quản trị viên", email: "admin@gmail.com" },
+    author: { userId: 1, fullName: "Quản trị viên" },
     status: "APPROVED",
   },
   {
@@ -92,7 +83,7 @@ const MOCK_POSTS = [
     summary: "Gaming, nhạc studio, hay commute hàng ngày — mỗi use case cần một loại tai nghe khác nhau.",
     mainImageUrl: "https://images.unsplash.com/photo-1524678606370-a47ad25cb82a?w=900&q=80",
     commentCount: 63,
-    author: { userId: 2, fullName: "Nguyễn Văn A", email: "user1@gmail.com" },
+    author: { userId: 2, fullName: "Nguyễn Văn A" },
     status: "APPROVED",
   },
 ];
@@ -101,12 +92,10 @@ const MOCK_PRODUCTS = [
   {
     productId: 1,
     productName: "AirPods Pro 2",
-    description: "Tai nghe chống ồn cao cấp của Apple",
     price: 5500000,
     discountedPrice: 4950000,
     discountPercent: 10,
     stock: 50,
-    categoryId: 1,
     categoryName: "Tai nghe",
     mainImageUrl: "https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=500&q=80",
     averageRating: 5.0,
@@ -115,12 +104,10 @@ const MOCK_PRODUCTS = [
   {
     productId: 2,
     productName: "Sony WH-1000XM5",
-    description: "Tai nghe chống ồn cao cấp của Sony",
     price: 8000000,
     discountedPrice: 6400000,
     discountPercent: 20,
     stock: 30,
-    categoryId: 1,
     categoryName: "Tai nghe",
     mainImageUrl: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80",
     averageRating: 4.0,
@@ -129,12 +116,10 @@ const MOCK_PRODUCTS = [
   {
     productId: 3,
     productName: "Sạc nhanh 20W",
-    description: "Sạc nhanh chính hãng chuẩn PD",
     price: 300000,
     discountedPrice: null,
     discountPercent: 0,
     stock: 100,
-    categoryId: 3,
     categoryName: "Phụ kiện",
     mainImageUrl: "https://images.unsplash.com/photo-1583394838336-acd977736f90?w=500&q=80",
     averageRating: 4.5,
@@ -143,12 +128,10 @@ const MOCK_PRODUCTS = [
   {
     productId: 4,
     productName: "Cáp USB-C to Lightning 1m",
-    description: "Cáp sạc chính hãng, hỗ trợ sạc nhanh 20W",
     price: 450000,
     discountedPrice: 390000,
     discountPercent: 13,
     stock: 200,
-    categoryId: 3,
     categoryName: "Phụ kiện",
     mainImageUrl: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=500&q=80",
     averageRating: 4.3,
@@ -158,50 +141,31 @@ const MOCK_PRODUCTS = [
 
 // ─── Micro components ─────────────────────────────────────────────────────────
 
-const Tag = ({ label }) => (
-  <span className={styles.tag}>{label}</span>
-);
+const Tag = ({ label }) => <span className={styles.tag}>{label}</span>;
 
 const Stars = ({ rating = 0, count }) => (
   <div className={styles.stars}>
     <div className={styles.starRow}>
       {[1, 2, 3, 4, 5].map((i) => (
-        <svg
-          key={i}
-          className={styles.star}
-          fill={i <= Math.round(rating) ? "#fbbf24" : "#e2e8f0"}
-          viewBox="0 0 20 20"
-        >
+        <svg key={i} className={styles.star} fill={i <= Math.round(rating) ? "#fbbf24" : "#e2e8f0"} viewBox="0 0 20 20">
           <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
         </svg>
       ))}
     </div>
-    {count !== undefined && (
-      <span className={styles.starCount}>({count})</span>
-    )}
+    {count !== undefined && <span className={styles.starCount}>({count})</span>}
   </div>
 );
 
 const ArrowIcon = ({ className = "" }) => (
-  <svg
-    className={className}
-    width="16"
-    height="16"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    strokeWidth={2}
-  >
+  <svg className={className} width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
   </svg>
 );
 
 // ─── 1. PROMO BAR ─────────────────────────────────────────────────────────────
-// Backend: GET /promotions/active → data = [{ promotionId, promotionName, discountPercent, ... }]
 
 const PromoBanner = ({ promotions }) => {
   if (!promotions?.length) return null;
-  // Hiển thị promotion đầu tiên đang active
   const promo = promotions[0];
   return (
     <div className={styles.promoBar}>
@@ -209,74 +173,49 @@ const PromoBanner = ({ promotions }) => {
         <div className={styles.promoIcon}>🎁</div>
         <div>
           <p className={styles.promoName}>{promo.promotionName}</p>
-          <p className={styles.promoSub}>
-            Giảm đến {promo.discountPercent}% · Số lượng có hạn
-          </p>
+          <p className={styles.promoSub}>Giảm đến {promo.discountPercent}% · Số lượng có hạn</p>
         </div>
       </div>
-      <Link to="/promotions" className={styles.promoBtn}>
-        Xem ưu đãi →
-      </Link>
+      <Link to="/promotions" className={styles.promoBtn}>Xem ưu đãi →</Link>
     </div>
   );
 };
 
 // ─── 2. HERO BANNER ───────────────────────────────────────────────────────────
-// Backend: GET /posts → data.content[0] — dùng bài đầu tiên làm hero
-// Fields: postId, title, summary, mainImageUrl, commentCount
 
 const HeroBanner = ({ post }) => {
   const [ref, visible] = useReveal();
   if (!post) return null;
   return (
     <section className={styles.hero}>
-      {/* Ảnh nền */}
       <div className={styles.heroBg}>
-        <img
-  src={getImageUrl(post.mainImageUrl)}
-          alt=""
-          onError={imgFallback}
-          className={styles.heroBgImg}
-        />
+        <img src={getImageUrl(post.mainImageUrl)} alt="" onError={imgFallback} className={styles.heroBgImg} />
         <div className={styles.heroOverlayH} />
         <div className={styles.heroOverlayV} />
       </div>
-      {/* Lưới trang trí */}
       <div className={styles.heroGrid} />
-
       <div className={styles.heroInner}>
-        <div
-          ref={ref}
-          className={`${styles.heroContent} ${visible ? styles.visible : styles.hidden}`}
-        >
+        <div ref={ref} className={`${styles.heroContent} ${visible ? styles.visible : styles.hidden}`}>
           <div className={styles.heroMeta}>
             <Tag label="Nổi bật" />
             <span className={styles.heroMetaDot}>• Bài viết của tuần</span>
           </div>
-
           <h1 className={styles.heroTitle}>{post.title}</h1>
-
           <p className={styles.heroSummary}>{post.summary}</p>
-
           <div className={styles.heroActions}>
             <Link to={`/posts/${post.postId}`} className={styles.heroCta}>
               Đọc ngay <ArrowIcon />
             </Link>
-            <span className={styles.heroComments}>
-              💬 {post.commentCount} bình luận
-            </span>
+            <span className={styles.heroComments}>💬 {post.commentCount} bình luận</span>
           </div>
         </div>
       </div>
-
       <div className={styles.heroFade} />
     </section>
   );
 };
 
 // ─── 3. FEATURED POSTS ────────────────────────────────────────────────────────
-// Backend: GET /posts?page=0&size=8 → data.content[]
-// Fields: postId, title, summary, mainImageUrl, commentCount, author
 
 const POST_CATEGORIES = [
   { label: "Tất cả", icon: "✦" },
@@ -286,8 +225,6 @@ const POST_CATEGORIES = [
   { label: "Tin tức", icon: "📡" },
 ];
 
-// Backend không trả category field riêng — tự classify từ title (hoặc thêm tag sau)
-// Hiện tại để "Tất cả" luôn hiển thị đủ; filter chỉ active khi có data thực
 const guessCategory = (post) => {
   const t = post.title?.toLowerCase() || "";
   if (t.includes("so sánh") || t.includes("vs")) return "So sánh";
@@ -299,58 +236,33 @@ const guessCategory = (post) => {
 
 const FeaturedPosts = ({ posts }) => {
   const [active, setActive] = useState("Tất cả");
-
-  // Gắn category tạm từ title nếu backend chưa trả category field
-  const postsWithCat = posts.map((p) => ({
-    ...p,
-    _cat: p.category || guessCategory(p),
-  }));
-
-  const filtered =
-    active === "Tất cả"
-      ? postsWithCat
-      : postsWithCat.filter((p) => p._cat === active);
-
+  const postsWithCat = posts.map((p) => ({ ...p, _cat: p.category || guessCategory(p) }));
+  const filtered = active === "Tất cả" ? postsWithCat : postsWithCat.filter((p) => p._cat === active);
   const [hero, ...rest] = filtered;
 
   return (
     <section className={`${styles.section} ${styles.sectionWhite}`}>
       <div className={styles.container}>
-        {/* Header */}
         <div className={styles.sectionHead}>
           <div>
             <p className={styles.eyebrow}>Khám phá</p>
             <h2 className={styles.sectionTitle}>Bài viết công nghệ nổi bật</h2>
           </div>
-          <Link to="/posts" className={styles.seeAll}>
-            Xem tất cả{" "}
-            <ArrowIcon className={styles.seeAllArrow} />
-          </Link>
+          <Link to="/posts" className={styles.seeAll}>Xem tất cả <ArrowIcon className={styles.seeAllArrow} /></Link>
         </div>
-
-        {/* Filter pills */}
         <div className={styles.pillRow}>
           {POST_CATEGORIES.map((c) => (
-            <button
-              key={c.label}
-              onClick={() => setActive(c.label)}
-              className={`${styles.pill} ${active === c.label ? styles.pillActive : ""}`}
-            >
+            <button key={c.label} onClick={() => setActive(c.label)}
+              className={`${styles.pill} ${active === c.label ? styles.pillActive : ""}`}>
               {c.icon} {c.label}
             </button>
           ))}
         </div>
-
-        {/* Grid: big card trái + list nhỏ phải */}
         {hero && (
           <div className={styles.featuredGrid}>
-            {/* Big card */}
             <Link to={`/posts/${hero.postId}`} className={styles.bigCard}>
               <div className={styles.bigCardImg}>
-                <img src={getImageUrl(hero.mainImageUrl)}
-                  alt={hero.title}
-                  onError={imgFallback}
-                />
+                <img src={getImageUrl(hero.mainImageUrl)} alt={hero.title} onError={imgFallback} />
               </div>
               <div className={styles.bigCardOverlay} />
               <div className={styles.bigCardBody}>
@@ -360,27 +272,16 @@ const FeaturedPosts = ({ posts }) => {
                 <p className={styles.bigCardMeta}>💬 {hero.commentCount} bình luận</p>
               </div>
             </Link>
-
-            {/* List nhỏ */}
             <div className={styles.smallList}>
               {rest.slice(0, 4).map((post) => (
-                <Link
-                  key={post.postId}
-                  to={`/posts/${post.postId}`}
-                  className={styles.smallItem}
-                >
+                <Link key={post.postId} to={`/posts/${post.postId}`} className={styles.smallItem}>
                   <div className={styles.smallThumb}>
-                    <img src={getImageUrl(post.mainImageUrl)}
-                      alt={post.title}
-                      onError={imgFallback}
-                    />
+                    <img src={getImageUrl(post.mainImageUrl)} alt={post.title} onError={imgFallback} />
                   </div>
                   <div className={styles.smallMeta}>
                     <Tag label={post._cat} />
                     <h4 className={styles.smallTitle}>{post.title}</h4>
-                    <span className={styles.smallComments}>
-                      💬 {post.commentCount}
-                    </span>
+                    <span className={styles.smallComments}>💬 {post.commentCount}</span>
                   </div>
                 </Link>
               ))}
@@ -392,29 +293,29 @@ const FeaturedPosts = ({ posts }) => {
   );
 };
 
-// ─── 4. PRODUCT CARD ─────────────────────────────────────────────────────────
-// Backend: GET /products?page=0&size=4 → data.content[]
-// Fields: productId, productName, price, discountedPrice, discountPercent,
-//         stock, categoryName, mainImageUrl, averageRating, reviewCount
+// ─── 4. PRODUCT CARD — Redesigned ────────────────────────────────────────────
 
 const ProductCard = ({ product, delay = 0 }) => {
   const { addToCart } = useCart();
   const [ref, visible] = useReveal();
   const [adding, setAdding] = useState(false);
+  const [added, setAdded] = useState(false);
 
   const handleAdd = async (e) => {
     e.preventDefault();
     setAdding(true);
     await addToCart(product.productId, 1);
     setAdding(false);
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1800);
   };
 
-  // discountedPrice có thể null nếu không giảm giá
-  const displayPrice = product.discountedPrice ?? product.price;
   const hasDiscount =
     product.discountPercent > 0 &&
     product.discountedPrice != null &&
     product.discountedPrice < product.price;
+
+  const displayPrice = product.discountedPrice ?? product.price;
 
   return (
     <div
@@ -422,19 +323,17 @@ const ProductCard = ({ product, delay = 0 }) => {
       className={`${styles.productCard} ${visible ? styles.visible : styles.hidden}`}
       style={{ transitionDelay: `${delay}ms` }}
     >
-      <Link to={`/products/${product.productId}`}>
+      <Link to={`/products/${product.productId}`} style={{ textDecoration: "none" }}>
         {/* Ảnh */}
         <div className={styles.productImgWrap}>
           <img
-  src={getImageUrl(product.mainImageUrl)}
+            src={getImageUrl(product.mainImageUrl)}
             alt={product.productName}
             onError={productImgFallback}
             className={styles.productImg}
           />
           {hasDiscount && (
-            <span className={styles.discountBadge}>
-              -{product.discountPercent}%
-            </span>
+            <span className={styles.discountBadge}>-{product.discountPercent}%</span>
           )}
           <span className={styles.categoryBadge}>{product.categoryName}</span>
         </div>
@@ -443,24 +342,35 @@ const ProductCard = ({ product, delay = 0 }) => {
         <div className={styles.productBody}>
           <p className={styles.productName}>{product.productName}</p>
           <Stars rating={product.averageRating} count={product.reviewCount} />
-          <div className={styles.priceRow}>
-            <span className={styles.priceMain}>{formatVND(displayPrice)}</span>
-            {hasDiscount && (
-              <span className={styles.priceOld}>{formatVND(product.price)}</span>
-            )}
+
+          {/* Khối giá — luôn cùng chiều cao để cards đều nhau */}
+          <div className={styles.priceBlock}>
+            {/* Hàng giá cũ — luôn chiếm chỗ */}
+            <div className={styles.priceOldRow}>
+              {hasDiscount && (
+                <span className={styles.priceOld}>{formatVND(product.price)}</span>
+              )}
+            </div>
+            {/* Giá hiển thị chính */}
+            <span className={`${styles.priceMain} ${hasDiscount ? styles.priceMainSale : ""}`}>
+              {formatVND(displayPrice)}
+            </span>
           </div>
         </div>
       </Link>
 
-      {/* Thêm giỏ */}
+      {/* Nút thêm giỏ */}
       <div className={styles.productFoot}>
-        <button
-          onClick={handleAdd}
-          disabled={adding}
-          className={styles.addBtn}
-        >
+        <button onClick={handleAdd} disabled={adding} className={styles.addBtn}>
           {adding ? (
             <span className={styles.spinner} />
+          ) : added ? (
+            <>
+              <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+              Đã thêm
+            </>
           ) : (
             <>
               <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -476,7 +386,6 @@ const ProductCard = ({ product, delay = 0 }) => {
 };
 
 // ─── 5. REVIEWS SECTION ──────────────────────────────────────────────────────
-// Hiển thị sản phẩm lồng ghép trong editorial context
 
 const ReviewsSection = ({ products }) => (
   <section className={`${styles.section} ${styles.sectionBg}`}>
@@ -486,21 +395,18 @@ const ReviewsSection = ({ products }) => (
           <p className={styles.eyebrow}>Đã kiểm chứng</p>
           <h2 className={styles.sectionTitle}>Chúng tôi đã dùng thử cho bạn</h2>
           <p className={styles.sectionDesc}>
-            Mỗi sản phẩm được đội ngũ biên tập trải nghiệm ít nhất 2 tuần.
-            Không quảng cáo, không thiên vị.
+            Mỗi sản phẩm được đội ngũ biên tập trải nghiệm ít nhất 2 tuần. Không quảng cáo, không thiên vị.
           </p>
         </div>
         <Link to="/products" className={styles.seeAll}>
           Xem tất cả <ArrowIcon className={styles.seeAllArrow} />
         </Link>
       </div>
-
       <div className={styles.productGrid}>
         {products.map((p, i) => (
           <ProductCard key={p.productId} product={p} delay={i * 80} />
         ))}
       </div>
-
       <div className={styles.viewAllWrap}>
         <Link to="/products" className={styles.viewAllBtn}>
           Xem tất cả sản phẩm <ArrowIcon />
@@ -511,32 +417,18 @@ const ReviewsSection = ({ products }) => (
 );
 
 // ─── 6. EDITORIAL BRIDGE ─────────────────────────────────────────────────────
-// Cầu nối nội dung ↔ hành động: bài viết tư vấn + stats + newsletter
 
 const EditorialBridge = ({ posts }) => {
   const [ref, visible] = useReveal();
-  // Lấy bài thứ 2 (index 1) làm editorial CTA nếu có
   const ctaPost = posts?.[1];
-
   return (
     <section className={`${styles.section} ${styles.sectionWhite}`}>
       <div className={styles.container}>
-        <div
-          ref={ref}
-          className={`${styles.bridgeReveal} ${visible ? styles.visible : styles.hidden}`}
-        >
+        <div ref={ref} className={`${styles.bridgeReveal} ${visible ? styles.visible : styles.hidden}`}>
           <div className={styles.bridgeGrid}>
-            {/* Trái: editorial dark card */}
-            <Link
-              to={ctaPost ? `/posts/${ctaPost.postId}` : "/posts"}
-              className={styles.darkCard}
-            >
+            <Link to={ctaPost ? `/posts/${ctaPost.postId}` : "/posts"} className={styles.darkCard}>
               <div className={styles.darkCardBg}>
-                <img
-                  src="https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&q=60"
-                  alt=""
-                  onError={() => {}}
-                />
+                <img src="https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&q=60" alt="" />
               </div>
               <div className={styles.darkCardContent}>
                 <Tag label="Hướng dẫn mua" />
@@ -544,51 +436,31 @@ const EditorialBridge = ({ posts }) => {
                   {ctaPost?.title || "Hướng dẫn chọn sản phẩm phù hợp với nhu cầu"}
                 </h3>
                 <p className={styles.darkCardDesc}>
-                  {ctaPost?.summary ||
-                    "Đừng chỉ nhìn vào giá. Chúng tôi giúp bạn hiểu thứ thực sự quan trọng trước khi quyết định."}
+                  {ctaPost?.summary || "Đừng chỉ nhìn vào giá. Chúng tôi giúp bạn hiểu thứ thực sự quan trọng."}
                 </p>
               </div>
               <div className={styles.darkCardLink}>
-                Đọc bài viết{" "}
-                <ArrowIcon className={styles.darkCardLinkArrow} />
+                Đọc bài viết <ArrowIcon className={styles.darkCardLinkArrow} />
               </div>
             </Link>
-
-            {/* Phải: stats + newsletter */}
             <div className={styles.bridgeRight}>
-              {/* Trust stats */}
               <div className={styles.statsGrid}>
-                {[
-                  { num: "200+", label: "Bài review" },
-                  { num: "50k+", label: "Độc giả/tháng" },
-                  { num: "98%", label: "Hài lòng" },
-                ].map(({ num, label }) => (
+                {[{ num: "200+", label: "Bài review" }, { num: "50k+", label: "Độc giả/tháng" }, { num: "98%", label: "Hài lòng" }].map(({ num, label }) => (
                   <div key={label} className={styles.statBox}>
                     <p className={styles.statNum}>{num}</p>
                     <p className={styles.statLabel}>{label}</p>
                   </div>
                 ))}
               </div>
-
-              {/* Newsletter */}
               <div className={styles.newsletter}>
                 <div>
                   <div className={styles.newsletterEmoji}>📬</div>
                   <h3 className={styles.newsletterTitle}>Bản tin công nghệ tuần</h3>
-                  <p className={styles.newsletterDesc}>
-                    Review mới, so sánh sâu, gợi ý mua hàng — mỗi tuần một lần,
-                    không spam.
-                  </p>
+                  <p className={styles.newsletterDesc}>Review mới, so sánh sâu, gợi ý mua hàng — mỗi tuần một lần, không spam.</p>
                 </div>
                 <div className={styles.newsletterForm}>
-                  <input
-                    type="email"
-                    placeholder="email@của.bạn"
-                    className={styles.newsletterInput}
-                  />
-                  <button type="button" className={styles.newsletterBtn}>
-                    Đăng ký
-                  </button>
+                  <input type="email" placeholder="email@của.bạn" className={styles.newsletterInput} />
+                  <button type="button" className={styles.newsletterBtn}>Đăng ký</button>
                 </div>
               </div>
             </div>
@@ -600,8 +472,6 @@ const EditorialBridge = ({ posts }) => {
 };
 
 // ─── 7. SUGGESTION SECTION ───────────────────────────────────────────────────
-// Backend: dùng lại posts đã fetch, lấy slice [1..5]
-// Fields: postId, title, summary, mainImageUrl, commentCount
 
 const SuggestionCard = ({ post, delay }) => {
   const [ref, visible] = useReveal();
@@ -613,20 +483,14 @@ const SuggestionCard = ({ post, delay }) => {
       style={{ transitionDelay: `${delay}ms` }}
     >
       <div className={styles.suggestionThumb}>
-        <img
-  src={getImageUrl(post.mainImageUrl)}
-          alt={post.title}
-          onError={imgFallback}
-        />
+        <img src={getImageUrl(post.mainImageUrl)} alt={post.title} onError={imgFallback} />
       </div>
       <div className={styles.suggestionBody}>
         <Tag label={post._cat || guessCategory(post)} />
         <h4 className={styles.suggestionTitle}>{post.title}</h4>
         <p className={styles.suggestionSummary}>{post.summary}</p>
         <div className={styles.suggestionFoot}>
-          <span className={styles.suggestionComments}>
-            💬 {post.commentCount}
-          </span>
+          <span className={styles.suggestionComments}>💬 {post.commentCount}</span>
           <span className={styles.suggestionReadMore}>Đọc →</span>
         </div>
       </div>
@@ -635,35 +499,25 @@ const SuggestionCard = ({ post, delay }) => {
 };
 
 const SuggestionsSection = ({ posts }) => (
-  <section
-    className={`${styles.section} ${styles.sectionBg}`}
-    style={{ borderTop: "1px solid #f1f5f9" }}
-  >
+  <section className={`${styles.section} ${styles.sectionBg}`} style={{ borderTop: "1px solid #f1f5f9" }}>
     <div className={styles.container}>
       <div className={styles.sectionHead}>
         <div>
           <p className={styles.eyebrow}>Dành riêng cho bạn</p>
           <h2 className={styles.sectionTitle}>Có thể bạn quan tâm</h2>
         </div>
-        <Link to="/posts" className={styles.seeAll}>
-          Xem thêm <ArrowIcon className={styles.seeAllArrow} />
-        </Link>
+        <Link to="/posts" className={styles.seeAll}>Xem thêm <ArrowIcon className={styles.seeAllArrow} /></Link>
       </div>
-
       <div className={styles.suggestionGrid}>
         {posts.map((post, i) => (
-          <SuggestionCard
-            key={post.postId}
-            post={post}
-            delay={i * 80}
-          />
+          <SuggestionCard key={post.postId} post={post} delay={i * 80} />
         ))}
       </div>
     </div>
   </section>
 );
 
-// ─── MAIN: HomePage ──────────────────────────────────────────────────────────
+// ─── MAIN ────────────────────────────────────────────────────────────────────
 
 export default function HomePage() {
   const [posts, setPosts] = useState(MOCK_POSTS);
@@ -673,50 +527,24 @@ export default function HomePage() {
   useEffect(() => {
     const fetchAll = async () => {
       const [postsRes, productsRes, promoRes] = await Promise.allSettled([
-        // GET /posts → response.data = { content, page, size, totalElements, ... }
         postApi.getAll({ page: 0, size: 8 }),
-        // GET /products → response.data = { content, page, size, ... }
         productApi.getAll({ page: 0, size: 4 }),
-        // GET /promotions/active → response.data = [{ promotionId, promotionName, discountPercent, ... }]
         promotionApi.getActive(),
       ]);
-
-      // unwrap: axiosClient trả về response.data (tức là { success, message, data, timestamp })
-      // api/index.js đã unwrap thêm 1 lần → .then(r => r.data)
-      // Nên ở đây postsRes.value đã là data.content object
-      if (postsRes.status === "fulfilled" && postsRes.value?.content?.length) {
-        setPosts(postsRes.value.content);
-      }
-      if (productsRes.status === "fulfilled" && productsRes.value?.content?.length) {
-        setProducts(productsRes.value.content);
-      }
-      // promotions/active trả về array trực tiếp (không có .content)
-      if (promoRes.status === "fulfilled" && Array.isArray(promoRes.value)) {
-        setPromotions(promoRes.value);
-      }
+      if (postsRes.status === "fulfilled" && postsRes.value?.content?.length) setPosts(postsRes.value.content);
+      if (productsRes.status === "fulfilled" && productsRes.value?.content?.length) setProducts(productsRes.value.content);
+      if (promoRes.status === "fulfilled" && Array.isArray(promoRes.value)) setPromotions(promoRes.value);
     };
-
     fetchAll();
   }, []);
 
   return (
     <div className={styles.page}>
-      {/* Promo bar — chỉ hiện khi có khuyến mãi active */}
       <PromoBanner promotions={promotions} />
-
-      {/* Hero: bài viết đầu tiên */}
       <HeroBanner post={posts[0]} />
-
-      {/* Section: Bài viết công nghệ nổi bật */}
       <FeaturedPosts posts={posts} />
-
-      {/* Section: Review sản phẩm — sản phẩm lồng ghép trong editorial */}
       <ReviewsSection products={products} />
-
-      {/* Section: Editorial bridge — nội dung tư vấn + newsletter */}
       <EditorialBridge posts={posts} />
-
-      {/* Section: Gợi ý cho bạn */}
       <SuggestionsSection posts={posts.slice(1, 5)} />
     </div>
   );

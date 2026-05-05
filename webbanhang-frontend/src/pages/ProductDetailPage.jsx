@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { productApi, postApi } from "../api";
+import { productApi, postApi, reviewApi } from "../api";
 import { useCart } from "../context/CartContext";
 import { formatVND } from "../utils/format";
 import styles from "./ProductDetailPage.module.css";
@@ -34,9 +34,9 @@ const getDiscount = (product) => {
 export default function ProductDetailPage() {
   const { id } = useParams();
   const productId = id;
-const navigate = useNavigate();
+  const navigate = useNavigate();
   const { addToCart } = useCart();
-
+  const [reviews, setReviews] = useState([]);
   const [product, setProduct] = useState(null);
   const [ratingStats, setRatingStats] = useState(null);
   const [featuredProducts, setFeaturedProducts] = useState([]);
@@ -48,13 +48,14 @@ const navigate = useNavigate();
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [productRes, ratingRes, featuredRes, saleRes, postRes] =
+        const [productRes, ratingRes, featuredRes, saleRes, postRes, reviewRes] =
           await Promise.allSettled([
             productApi.getById(productId),
             productApi.getRatingStats?.(productId),
             productApi.getFeatured?.(),
             productApi.getOnSale?.(),
             postApi.getAll?.({ page: 0, size: 3 }),
+            reviewApi.getByProduct(productId, { page: 0, size: 10 }),
           ]);
 
         if (productRes.status === "fulfilled") {
@@ -81,6 +82,12 @@ const navigate = useNavigate();
           const data = postRes.value?.data || postRes.value;
           setRelatedPosts(data?.content || data || []);
         }
+
+        if (reviewRes.status === "fulfilled") {
+          const data = reviewRes.value?.data || reviewRes.value;
+          setReviews(Array.isArray(data?.content) ? data.content : []);
+        }
+
       } catch (error) {
         console.error("Lỗi tải chi tiết sản phẩm:", error);
       }
@@ -283,7 +290,48 @@ const navigate = useNavigate();
           })}
         </div>
       </section>
+          <section className={styles.reviewComments}>
+  <div className={styles.reviewHeader}>
+    <div>
+      <span>Đánh giá khách hàng</span>
+      <h2>Đánh giá từ người đã mua sản phẩm</h2>
+    </div>
 
+    <p>{reviews.length} đánh giá</p>
+  </div>
+
+  {reviews.length > 0 ? (
+    <div className={styles.reviewList}>
+      {reviews.map((review) => (
+        <article key={review.reviewId} className={styles.reviewCard}>
+          <div className={styles.reviewAvatar}>
+            {(review.user?.fullName || "U").charAt(0).toUpperCase()}
+          </div>
+
+          <div className={styles.reviewBody}>
+            <div className={styles.reviewTop}>
+              <div>
+                <h4>{review.user?.fullName || "Người dùng"}</h4>
+                <small>{review.createdAt}</small>
+              </div>
+
+              <div className={styles.reviewStars}>
+                {renderStars(review.rating)}
+              </div>
+            </div>
+
+            <p>{review.comment}</p>
+          </div>
+        </article>
+      ))}
+    </div>
+  ) : (
+    <div className={styles.emptyReviews}>
+      <h3>Chưa có đánh giá nào</h3>
+      <p>Sản phẩm này chưa có đánh giá từ khách hàng.</p>
+    </div>
+  )}
+</section>
       <ProductSlider title="Sản phẩm nổi bật" products={featuredProducts} />
       <ProductSlider title="Đang khuyến mãi" products={saleProducts} sale />
 
