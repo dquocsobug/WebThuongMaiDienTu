@@ -100,4 +100,20 @@ public class UserController {
         return ResponseEntity.ok(
                 ApiResponse.success("Nâng cấp thành công " + count + " khách hàng thân thiết"));
     }
+
+    // PATCH /api/users/{userId}/disable
+    @PatchMapping("/{userId}/disable")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> disableUser(@PathVariable Integer userId) {
+        userService.disableUser(userId);
+        return ResponseEntity.ok(ApiResponse.success("Đã vô hiệu hóa người dùng"));
+    }
+
+    // PATCH /api/users/{userId}/enable
+    @PatchMapping("/{userId}/enable")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> enableUser(@PathVariable Integer userId) {
+        userService.enableUser(userId);
+        return ResponseEntity.ok(ApiResponse.success("Đã mở khóa người dùng"));
+    }
 }

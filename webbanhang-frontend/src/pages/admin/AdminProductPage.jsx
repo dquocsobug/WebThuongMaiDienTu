@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
+import * as XLSX from "xlsx";
 import {
   Search,
   RefreshCcw,
@@ -11,6 +12,9 @@ import {
   Package,
   Boxes,
   BadgePercent,
+  FileSpreadsheet,
+  Download,
+  Eye,
 } from "lucide-react";
 import { productApi, categoryApi } from "../../api";
 import "./AdminProductPage.css";
@@ -60,6 +64,8 @@ export default function AdminProductPage() {
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [showTemplate, setShowTemplate] = useState(false);
 
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
@@ -231,6 +237,61 @@ export default function AdminProductPage() {
     fetchProducts();
   };
 
+  const handleImportExcel = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.toLowerCase().endsWith(".xlsx")) {
+      toast.error("Vui lòng chọn file Excel .xlsx");
+      e.target.value = "";
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    setImporting(true);
+
+    try {
+      await productApi.importExcel(formData);
+      toast.success("Import sản phẩm thành công");
+      await fetchProducts();
+    } catch (error) {
+      console.error("Lỗi import Excel:", error);
+      toast.error(error?.response?.data?.message || "Import Excel thất bại");
+    } finally {
+      setImporting(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleDownloadTemplate = () => {
+    const data = [
+      {
+        productName: "AirPods Pro 2",
+        price: 5500000,
+        stock: 20,
+        categoryId: 1,
+        mainImageUrl: "airpods-pro-2.jpg",
+        description: "Tai nghe Apple chống ồn chủ động",
+      },
+      {
+        productName: "iPhone 15",
+        price: 20000000,
+        stock: 10,
+        categoryId: 2,
+        mainImageUrl: "iphone15.jpg",
+        description: "Điện thoại Apple chính hãng",
+      },
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Products");
+    XLSX.writeFile(workbook, "mau-import-san-pham.xlsx");
+  };
+
   return (
     <div className="admin-product-page">
       <div className="admin-page-title">
@@ -370,7 +431,11 @@ export default function AdminProductPage() {
             <div className="admin-form-actions span-2">
               <button type="submit" className="admin-btn primary" disabled={saving}>
                 <Save size={17} />
-                {saving ? "Đang lưu..." : editingProduct ? "Lưu thay đổi" : "Thêm sản phẩm"}
+                {saving
+                  ? "Đang lưu..."
+                  : editingProduct
+                  ? "Lưu thay đổi"
+                  : "Thêm sản phẩm"}
               </button>
 
               <button type="button" className="admin-btn ghost" onClick={resetForm}>
@@ -426,6 +491,44 @@ export default function AdminProductPage() {
             <Plus size={17} />
             Thêm sản phẩm
           </button>
+
+          <button
+            type="button"
+            className="admin-btn excel"
+            onClick={() => setShowTemplate(true)}
+          >
+            <Eye size={17} />
+            Xem mẫu
+          </button>
+
+          <button
+            type="button"
+            className="admin-btn excel"
+            onClick={handleDownloadTemplate}
+          >
+            <Download size={17} />
+            Tải mẫu Excel
+          </button>
+
+          <button
+            type="button"
+            className="admin-btn excel"
+            disabled={importing}
+            onClick={() =>
+              document.getElementById("product-excel-input")?.click()
+            }
+          >
+            <FileSpreadsheet size={17} />
+            {importing ? "Đang import..." : "Import Excel"}
+          </button>
+
+          <input
+            id="product-excel-input"
+            type="file"
+            accept=".xlsx"
+            style={{ display: "none" }}
+            onChange={handleImportExcel}
+          />
         </form>
 
         <div className="admin-product-table-wrap">
@@ -544,6 +647,92 @@ export default function AdminProductPage() {
           </table>
         </div>
       </div>
+
+      {showTemplate && (
+        <div className="admin-template-overlay">
+          <div className="admin-template-modal">
+            <div className="admin-template-head">
+              <div>
+                <h3>Mẫu file Excel import sản phẩm</h3>
+                <p>
+                  File Excel cần đúng thứ tự cột bên dưới. Ảnh sản phẩm đặt
+                  trong thư mục <strong>public/images</strong>.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                className="admin-template-close"
+                onClick={() => setShowTemplate(false)}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="admin-template-table-wrap">
+              <table className="admin-template-table">
+                <thead>
+                  <tr>
+                    <th>productName</th>
+                    <th>price</th>
+                    <th>stock</th>
+                    <th>categoryId</th>
+                    <th>mainImageUrl</th>
+                    <th>description</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  <tr>
+                    <td>AirPods Pro 2</td>
+                    <td>5500000</td>
+                    <td>20</td>
+                    <td>1</td>
+                    <td>airpods-pro-2.jpg</td>
+                    <td>Tai nghe Apple chống ồn chủ động</td>
+                  </tr>
+
+                  <tr>
+                    <td>iPhone 15</td>
+                    <td>20000000</td>
+                    <td>10</td>
+                    <td>2</td>
+                    <td>iphone15.jpg</td>
+                    <td>Điện thoại Apple chính hãng</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div className="admin-template-note">
+              <p>
+                Lưu ý: cột <strong>mainImageUrl</strong> chỉ ghi tên ảnh, ví dụ:
+                <strong> iphone15.jpg</strong>. Không ghi{" "}
+                <strong>/images/</strong>.
+              </p>
+            </div>
+
+            <div className="admin-template-actions">
+              <button
+                type="button"
+                className="admin-btn ghost"
+                onClick={() => setShowTemplate(false)}
+              >
+                Đóng
+              </button>
+
+              <button
+                type="button"
+                className="admin-btn excel"
+                onClick={handleDownloadTemplate}
+              >
+                <Download size={17} />
+                Tải file mẫu
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

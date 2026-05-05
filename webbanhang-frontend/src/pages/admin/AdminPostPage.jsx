@@ -94,6 +94,12 @@ export default function AdminPostPage() {
   const [form, setForm] = useState(emptyForm);
   const [formSaving, setFormSaving] = useState(false);
 
+  const [confirmModal, setConfirmModal] = useState({
+  open: false,
+  type: "",
+  post: null,
+});
+
   const fetchPosts = async () => {
     setLoading(true);
 
@@ -295,33 +301,45 @@ export default function AdminPostPage() {
       setDetailLoading(false);
     }
   };
+  const openConfirmModal = (type, post) => {
+  setConfirmModal({
+    open: true,
+    type,
+    post,
+  });
+};
 
-  const handleApprove = async (post) => {
-    const ok = window.confirm(`Duyệt bài viết "${post.title}"?`);
-    if (!ok) return;
-
-    setActionId(post.postId);
-
-    try {
-      await postApi.reviewPost(post.postId, {
-        approved: true,
-        rejectionReason: null,
-      });
-
-      toast.success("Đã duyệt bài viết");
-      await fetchPosts();
-
-      if (selectedPost?.postId === post.postId) {
-        setSelectedPost(null);
-      }
-    } catch (error) {
-      console.error("Lỗi duyệt bài:", error);
-      toast.error(error?.response?.data?.message || "Duyệt bài thất bại");
-    } finally {
-      setActionId(null);
-    }
+  const closeConfirmModal = () => {
+    setConfirmModal({
+      open: false,
+      type: "",
+      post: null,
+    });
   };
 
+  const handleApprove = async (post) => {
+  setActionId(post.postId);
+
+  try {
+    await postApi.reviewPost(post.postId, {
+      approved: true,
+      rejectionReason: null,
+    });
+
+    toast.success("Đã duyệt bài viết");
+    closeConfirmModal();
+    await fetchPosts();
+
+    if (selectedPost?.postId === post.postId) {
+      setSelectedPost(null);
+    }
+  } catch (error) {
+    console.error("Lỗi duyệt bài:", error);
+    toast.error(error?.response?.data?.message || "Duyệt bài thất bại");
+  } finally {
+    setActionId(null);
+  }
+};
   const openRejectModal = (post) => {
     setRejectPost(post);
     setRejectReason("");
@@ -360,29 +378,24 @@ export default function AdminPostPage() {
   };
 
   const handleDelete = async (post) => {
-    const ok = window.confirm(
-      `Bạn có chắc muốn xóa bài viết "${post.title}" không?`
-    );
+  setActionId(post.postId);
 
-    if (!ok) return;
+  try {
+    await postApi.deleteAdmin(post.postId);
+    toast.success("Đã xóa bài viết");
+    closeConfirmModal();
+    await fetchPosts();
 
-    setActionId(post.postId);
-
-    try {
-      await postApi.deleteAdmin(post.postId);
-      toast.success("Đã xóa bài viết");
-      await fetchPosts();
-
-      if (selectedPost?.postId === post.postId) {
-        setSelectedPost(null);
-      }
-    } catch (error) {
-      console.error("Lỗi xóa bài viết:", error);
-      toast.error(error?.response?.data?.message || "Xóa bài viết thất bại");
-    } finally {
-      setActionId(null);
+    if (selectedPost?.postId === post.postId) {
+      setSelectedPost(null);
     }
-  };
+  } catch (error) {
+    console.error("Lỗi xóa bài viết:", error);
+    toast.error(error?.response?.data?.message || "Xóa bài viết thất bại");
+  } finally {
+    setActionId(null);
+  }
+};
 
   return (
     <div className="admin-post-page">
@@ -533,7 +546,13 @@ export default function AdminPostPage() {
                     </td>
 
                     <td>{post.createdAt || "—"}</td>
-                    <td>{post.publishedAt || "Chưa đăng"}</td>
+                    <td>
+  {post.publishedAt
+    ? post.publishedAt
+    : post.status === "APPROVED"
+    ? post.createdAt
+    : "Chưa đăng"}
+</td>
 
                     <td>
                       <div className="admin-post-actions">
@@ -557,17 +576,14 @@ export default function AdminPostPage() {
                         </button>
 
                         <button
-                          type="button"
-                          className="admin-post-action approve"
-                          title="Duyệt bài"
-                          disabled={
-                            actionId === post.postId ||
-                            post.status === "APPROVED"
-                          }
-                          onClick={() => handleApprove(post)}
-                        >
-                          <CheckCircle2 size={16} />
-                        </button>
+  type="button"
+  className="admin-post-action approve"
+  title="Duyệt bài"
+  disabled={actionId === post.postId || post.status === "APPROVED"}
+  onClick={() => openConfirmModal("approve", post)}
+>
+  <CheckCircle2 size={16} />
+</button>
 
                         <button
                           type="button"
@@ -587,7 +603,7 @@ export default function AdminPostPage() {
                           className="admin-post-action danger"
                           title="Xóa bài"
                           disabled={actionId === post.postId}
-                          onClick={() => handleDelete(post)}
+                          onClick={() => openConfirmModal("delete", post)}
                         >
                           <Trash2 size={16} />
                         </button>
@@ -728,6 +744,206 @@ export default function AdminPostPage() {
 
       {/* Phần selectedPost và rejectPost giữ nguyên như file cũ của bạn */}
       {/* Bạn copy tiếp phần selectedPost + rejectPost cũ xuống dưới nếu bị thiếu */}
+            {confirmModal.open && (
+        <div className="admin-post-confirm-overlay" onClick={closeConfirmModal}>
+          <div
+            className="admin-post-confirm-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="admin-post-confirm-close"
+              onClick={closeConfirmModal}
+            >
+              <X size={18} />
+            </button>
+
+            <div
+              className={
+                confirmModal.type === "delete"
+                  ? "admin-post-confirm-icon danger"
+                  : "admin-post-confirm-icon approve"
+              }
+            >
+              {confirmModal.type === "delete" ? (
+                <Trash2 size={28} />
+              ) : (
+                <CheckCircle2 size={28} />
+              )}
+            </div>
+
+            <h3>
+              {confirmModal.type === "delete"
+                ? "Xóa bài viết?"
+                : "Duyệt bài viết?"}
+            </h3>
+
+            <p>
+              {confirmModal.type === "delete"
+                ? `Bạn có chắc muốn xóa bài viết "${
+                    confirmModal.post?.title || "này"
+                  }" không?`
+                : `Bạn có chắc muốn duyệt bài viết "${
+                    confirmModal.post?.title || "này"
+                  }" không?`}
+            </p>
+
+            <div className="admin-post-confirm-actions">
+              <button
+                type="button"
+                className="admin-post-confirm-btn cancel"
+                onClick={closeConfirmModal}
+              >
+                Hủy
+              </button>
+
+              <button
+                type="button"
+                className={
+                  confirmModal.type === "delete"
+                    ? "admin-post-confirm-btn danger"
+                    : "admin-post-confirm-btn approve"
+                }
+                disabled={actionId === confirmModal.post?.postId}
+                onClick={() =>
+                  confirmModal.type === "delete"
+                    ? handleDelete(confirmModal.post)
+                    : handleApprove(confirmModal.post)
+                }
+              >
+                {actionId === confirmModal.post?.postId
+                  ? "Đang xử lý..."
+                  : confirmModal.type === "delete"
+                  ? "Xóa bài"
+                  : "Duyệt bài"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+                {selectedPost && (
+        <div
+          className="admin-post-detail-overlay"
+          onClick={() => setSelectedPost(null)}
+        >
+          <div
+            className="admin-post-detail-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="admin-post-detail-close"
+              onClick={() => setSelectedPost(null)}
+            >
+              <X size={18} />
+            </button>
+
+            <div className="admin-post-detail-hero">
+              <img
+                src={getImageUrl(selectedPost.mainImageUrl)}
+                alt={selectedPost.title}
+                onError={(e) => {
+                  e.currentTarget.src = fallbackImg;
+                }}
+              />
+
+              <div className="admin-post-detail-status">
+                <span className={statusClass[selectedPost.status]}>
+                  {statusLabel[selectedPost.status] || selectedPost.status}
+                </span>
+              </div>
+            </div>
+
+            <div className="admin-post-detail-body">
+              {detailLoading ? (
+                <div className="admin-post-detail-loading">
+                  Đang tải chi tiết bài viết...
+                </div>
+              ) : (
+                <>
+                  <h2>{selectedPost.title}</h2>
+
+                  <div className="admin-post-detail-meta">
+                    <span>👤 {selectedPost.author?.fullName || "—"}</span>
+                    <span>📧 {selectedPost.author?.email || "—"}</span>
+                    <span>💬 {selectedPost.commentCount || 0} bình luận</span>
+                    <span>🕒 {selectedPost.createdAt || "—"}</span>
+                  </div>
+
+                  <p className="admin-post-detail-summary">
+                    {selectedPost.summary || "Không có tóm tắt."}
+                  </p>
+
+                  {selectedPost.products?.length > 0 && (
+                    <div className="admin-post-linked-products">
+                      <div className="admin-post-linked-head">
+                        <Package size={18} />
+                        <strong>Sản phẩm gắn trong bài viết</strong>
+                      </div>
+
+                      <div className="admin-post-linked-grid">
+                        {selectedPost.products.map((item, index) => {
+                          const product = item.product || item;
+
+                          return (
+                            <div
+                              className="admin-post-linked-item"
+                              key={product.productId || index}
+                            >
+                              <img
+                                src={getImageUrl(product.mainImageUrl)}
+                                alt={product.productName}
+                                onError={(e) => {
+                                  e.currentTarget.src =
+                                    "https://placehold.co/300x300/f1f5f9/94a3b8?text=Product";
+                                }}
+                              />
+
+                              <div>
+                                <strong>{product.productName || "Sản phẩm"}</strong>
+                                <span>ID: {product.productId || "—"}</span>
+
+                                {item.note && <p>{item.note}</p>}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="admin-post-detail-content">
+                    {selectedPost.content || "Không có nội dung bài viết."}
+                  </div>
+
+                  <div className="admin-post-detail-actions">
+                    <button
+                      type="button"
+                      className="admin-btn ghost"
+                      onClick={() => setSelectedPost(null)}
+                    >
+                      Đóng
+                    </button>
+
+                    <button
+                      type="button"
+                      className="admin-btn primary"
+                      onClick={() => {
+                        setSelectedPost(null);
+                        openEditForm(selectedPost);
+                      }}
+                    >
+                      <Pencil size={17} />
+                      Sửa bài viết
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
+
 }

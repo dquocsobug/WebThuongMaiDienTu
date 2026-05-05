@@ -32,6 +32,10 @@ export const userApi = {
   deleteByAdmin: (userId) => axiosClient.delete(`/users/${userId}`),
 
   upgradeLoyal: (payload) => axiosClient.post("/users/upgrade-loyal", payload),
+
+  disableByAdmin: (userId) => axiosClient.patch(`/users/${userId}/disable`),
+
+  enableByAdmin: (userId) => axiosClient.patch(`/users/${userId}/enable`),
 };
 
 // ─── CATEGORIES ───────────────────────────────────────────────────────────────
@@ -67,6 +71,13 @@ export const productApi = {
 
   delete: (productId) => axiosClient.delete(`/products/${productId}`),
 
+  importExcel: (formData) =>
+    axiosClient.post("/products/import-excel", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }),
+
   addImage: (productId, payload) =>
     axiosClient.post(`/products/${productId}/images`, payload),
 
@@ -76,7 +87,6 @@ export const productApi = {
   setMainImage: (productId, imageId) =>
     axiosClient.patch(`/products/${productId}/images/${imageId}/set-main`),
 };
-
 // ─── CART ─────────────────────────────────────────────────────────────────────
 export const cartApi = {
   getCart: () => axiosClient.get("/cart"),

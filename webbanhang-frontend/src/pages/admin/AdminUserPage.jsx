@@ -8,6 +8,9 @@ import {
   Crown,
   Trash2,
   Save,
+  LockOpen,
+  X,
+  AlertTriangle,
 } from "lucide-react";
 import { userApi } from "../../api";
 import "./AdminUserPage.css";
@@ -26,6 +29,23 @@ const roleClass = {
   LOYAL_CUSTOMER: "admin-badge green",
   WRITER: "admin-badge blue",
   ADMIN: "admin-badge red",
+};
+
+const getCurrentUser = () => {
+  try {
+    return JSON.parse(localStorage.getItem("user") || "{}");
+  } catch {
+    return {};
+  }
+};
+
+const isCurrentUser = (user) => {
+  const currentUser = getCurrentUser();
+
+  return (
+    Number(user.userId) === Number(currentUser.userId) ||
+    user.email === currentUser.email
+  );
 };
 
 const unwrapList = (res) => {
@@ -47,6 +67,16 @@ const initials = (name = "") =>
     .map((w) => w.charAt(0).toUpperCase())
     .join("") || "U";
 
+const isUserDisabled = (user) => {
+  if (user.isActive === false) return true;
+  if (user.enabled === false) return true;
+  if (user.active === false) return true;
+  if (user.status === "DISABLED") return true;
+  if (user.status === "INACTIVE") return true;
+  if (user.deleted === true) return true;
+  return false;
+};
+
 export default function AdminUserPage() {
   const [users, setUsers] = useState([]);
   const [keyword, setKeyword] = useState("");
@@ -54,6 +84,11 @@ export default function AdminUserPage() {
   const [loading, setLoading] = useState(false);
   const [savingId, setSavingId] = useState(null);
   const [draftRoles, setDraftRoles] = useState({});
+  const [confirmModal, setConfirmModal] = useState({
+    open: false,
+    user: null,
+    type: "",
+  });
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -94,6 +129,7 @@ export default function AdminUserPage() {
       customer: users.filter((u) => u.role === "CUSTOMER").length,
       loyal: users.filter((u) => u.role === "LOYAL_CUSTOMER").length,
       admin: users.filter((u) => u.role === "ADMIN").length,
+      disabled: users.filter((u) => isUserDisabled(u)).length,
     };
   }, [users]);
 
@@ -161,22 +197,48 @@ export default function AdminUserPage() {
     }
   };
 
-  const handleDeleteUser = async (user) => {
-    const ok = window.confirm(
-      `Bạn có chắc muốn vô hiệu hóa tài khoản "${user.fullName}" không?`
-    );
+  const openConfirmModal = (user, type) => {
+    setConfirmModal({
+      open: true,
+      user,
+      type,
+    });
+  };
 
-    if (!ok) return;
+  const closeConfirmModal = () => {
+    setConfirmModal({
+      open: false,
+      user: null,
+      type: "",
+    });
+  };
+
+  const handleConfirmStatus = async () => {
+    const user = confirmModal.user;
+    const type = confirmModal.type;
+
+    if (!user) return;
 
     setSavingId(user.userId);
 
     try {
-      await userApi.deleteByAdmin(user.userId);
-      toast.success("Đã vô hiệu hóa người dùng");
+      if (type === "disable") {
+        await userApi.disableByAdmin(user.userId);
+        toast.success("Đã vô hiệu hóa người dùng");
+      }
+
+      if (type === "enable") {
+        await userApi.enableByAdmin(user.userId);
+        toast.success("Đã mở khóa người dùng");
+      }
+
+      closeConfirmModal();
       await fetchUsers();
     } catch (error) {
-      console.error("Lỗi vô hiệu hóa user:", error);
-      toast.error(error?.response?.data?.message || "Vô hiệu hóa thất bại");
+      console.error("Lỗi cập nhật trạng thái user:", error);
+      toast.error(
+        error?.response?.data?.message || "Không thể cập nhật trạng thái user"
+      );
     } finally {
       setSavingId(null);
     }
@@ -186,7 +248,7 @@ export default function AdminUserPage() {
     <div>
       <div className="admin-page-title">
         <h2>Quản lý người dùng</h2>
-        <p>Danh sách user, cập nhật role và vô hiệu hóa tài khoản.</p>
+        <p>Danh sách user, cập nhật role, vô hiệu hóa và mở khóa tài khoản.</p>
       </div>
 
       <div className="admin-user-stats">
@@ -271,6 +333,7 @@ export default function AdminUserPage() {
                 <th>Điện thoại</th>
                 <th>Địa chỉ</th>
                 <th>Role hiện tại</th>
+                <th>Trạng thái</th>
                 <th>Đổi role</th>
                 <th>Ngày tạo</th>
                 <th>Thao tác</th>
@@ -280,102 +343,216 @@ export default function AdminUserPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="8" className="admin-empty">
+                  <td colSpan="9" className="admin-empty">
                     Đang tải danh sách người dùng...
                   </td>
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="admin-empty">
+                  <td colSpan="9" className="admin-empty">
                     Không có người dùng nào.
                   </td>
                 </tr>
               ) : (
-                users.map((user) => (
-                  <tr key={user.userId}>
-                    <td>
-                      <div className="admin-user-cell">
-                        <div className="admin-user-avatar">
-                          {initials(user.fullName)}
+                users.map((user) => {
+  const disabled = isUserDisabled(user);
+  const currentUserRow = isCurrentUser(user);
+
+  return (
+                    <tr
+                      key={user.userId}
+                      className={disabled ? "user-disabled-row" : ""}
+                    >
+                      <td>
+                        <div className="admin-user-cell">
+                          <div className="admin-user-avatar">
+                            {initials(user.fullName)}
+                          </div>
+                          <div>
+                            <strong>{user.fullName || "Chưa có tên"}</strong>
+                            <span>ID: {user.userId}</span>
+                          </div>
                         </div>
-                        <div>
-                          <strong>{user.fullName || "Chưa có tên"}</strong>
-                          <span>ID: {user.userId}</span>
-                        </div>
-                      </div>
-                    </td>
+                      </td>
 
-                    <td>{user.email}</td>
-                    <td>{user.phone || "—"}</td>
-                    <td>{user.address || "—"}</td>
+                      <td>{user.email}</td>
+                      <td>{user.phone || "—"}</td>
+                      <td>{user.address || "—"}</td>
 
-                    <td>
-                      <span className={roleClass[user.role] || "admin-badge gray"}>
-                        {roleLabel[user.role] || user.role}
-                      </span>
-                    </td>
+                      <td>
+                        <span className={roleClass[user.role] || "admin-badge gray"}>
+                          {roleLabel[user.role] || user.role}
+                        </span>
+                      </td>
 
-                    <td>
-                      <select
-                        className="admin-role-select"
-                        value={draftRoles[user.userId] || user.role || ""}
-                        onChange={(e) =>
-                          handleRoleDraftChange(user.userId, e.target.value)
-                        }
-                      >
-                        {ROLES.map((r) => (
-                          <option key={r} value={r}>
-                            {roleLabel[r]}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-
-                    <td>{user.createdAt || "—"}</td>
-
-                    <td>
-                      <div className="admin-actions">
-                        <button
-                          type="button"
-                          className="admin-icon-action save"
-                          title="Lưu role"
-                          disabled={savingId === user.userId}
-                          onClick={() => handleUpdateRole(user)}
-                        >
-                          <Save size={16} />
-                        </button>
-
-                        <button
-                          type="button"
-                          className="admin-icon-action loyal"
-                          title="Nâng cấp khách hàng thân thiết"
-                          disabled={
-                            savingId === user.userId ||
-                            user.role === "LOYAL_CUSTOMER"
+                      <td>
+                        <span
+                          className={
+                            disabled
+                              ? "admin-status-badge disabled"
+                              : "admin-status-badge active"
                           }
-                          onClick={() => handleUpgradeLoyal(user)}
                         >
-                          <Crown size={16} />
-                        </button>
+                          {disabled ? "Đã vô hiệu hóa" : "Đang hoạt động"}
+                        </span>
+                      </td>
 
-                        <button
-                          type="button"
-                          className="admin-icon-action danger"
-                          title="Vô hiệu hóa user"
-                          disabled={savingId === user.userId}
-                          onClick={() => handleDeleteUser(user)}
+                      <td>
+                        <select
+                          className="admin-role-select"
+                          value={draftRoles[user.userId] || user.role || ""}
+                          onChange={(e) =>
+                            handleRoleDraftChange(user.userId, e.target.value)
+                          }
+                          disabled={disabled || currentUserRow}
                         >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                          {ROLES.map((r) => (
+                            <option key={r} value={r}>
+                              {roleLabel[r]}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+
+                      <td>{user.createdAt || "—"}</td>
+
+                      <td>
+                        <div className="admin-actions">
+                          <button
+                            type="button"
+                            className="admin-icon-action save"
+                            title="Lưu role"
+                            disabled={savingId === user.userId || disabled || currentUserRow}
+                            onClick={() => handleUpdateRole(user)}
+                          >
+                            <Save size={16} />
+                          </button>
+
+                          <button
+                            type="button"
+                            className="admin-icon-action loyal"
+                            title="Nâng cấp khách hàng thân thiết"
+                            disabled={
+                                        savingId === user.userId ||
+                                        user.role === "LOYAL_CUSTOMER" ||
+                                        disabled ||
+                                        currentUserRow
+                                      }
+                            onClick={() => handleUpgradeLoyal(user)}
+                          >
+                            <Crown size={16} />
+                          </button>
+
+                          {disabled ? (
+                              <button
+                                type="button"
+                                className="admin-icon-action restore has-tooltip"
+                                data-tooltip={
+                                  currentUserRow
+                                    ? "Không thể thao tác với tài khoản đang đăng nhập"
+                                    : "Mở khóa tài khoản"
+                                }
+                                disabled={savingId === user.userId || currentUserRow}
+                                onClick={() => openConfirmModal(user, "enable")}
+                              >
+                                <LockOpen size={16} />
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                className="admin-icon-action danger has-tooltip"
+                                data-tooltip={
+                                  currentUserRow
+                                    ? "Không thể thao tác với tài khoản đang đăng nhập"
+                                    : "Vô hiệu hóa tài khoản"
+                                }
+                                disabled={savingId === user.userId || currentUserRow}
+                                onClick={() => openConfirmModal(user, "disable")}
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
         </div>
       </div>
+
+      {confirmModal.open && (
+        <div className="admin-modal-overlay">
+          <div className="admin-confirm-modal">
+            <button
+              type="button"
+              className="admin-modal-close"
+              onClick={closeConfirmModal}
+            >
+              <X size={18} />
+            </button>
+
+            <div
+              className={
+                confirmModal.type === "disable"
+                  ? "admin-modal-icon danger"
+                  : "admin-modal-icon restore"
+              }
+            >
+              {confirmModal.type === "disable" ? (
+                <AlertTriangle size={26} />
+              ) : (
+                <LockOpen size={26} />
+              )}
+            </div>
+
+            <h3>
+              {confirmModal.type === "disable"
+                ? "Vô hiệu hóa người dùng?"
+                : "Mở khóa người dùng?"}
+            </h3>
+
+            <p>
+              {confirmModal.type === "disable"
+                ? `Bạn có chắc muốn vô hiệu hóa tài khoản "${
+                    confirmModal.user?.fullName || "người dùng này"
+                  }" không?`
+                : `Bạn có chắc muốn mở khóa tài khoản "${
+                    confirmModal.user?.fullName || "người dùng này"
+                  }" không?`}
+            </p>
+
+            <div className="admin-modal-actions">
+              <button
+                type="button"
+                className="admin-modal-btn cancel"
+                onClick={closeConfirmModal}
+              >
+                Hủy
+              </button>
+
+              <button
+                type="button"
+                className={
+                  confirmModal.type === "disable"
+                    ? "admin-modal-btn danger"
+                    : "admin-modal-btn restore"
+                }
+                onClick={handleConfirmStatus}
+                disabled={savingId === confirmModal.user?.userId}
+              >
+                {savingId === confirmModal.user?.userId
+                  ? "Đang xử lý..."
+                  : confirmModal.type === "disable"
+                  ? "Vô hiệu hóa"
+                  : "Mở khóa"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

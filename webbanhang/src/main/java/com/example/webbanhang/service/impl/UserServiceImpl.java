@@ -38,6 +38,7 @@ public class UserServiceImpl implements UserService {
                 .phone(user.getPhone())
                 .address(user.getAddress())
                 .role(user.getRole())
+                .isActive(user.getIsActive())
                 .createdAt(user.getCreatedAt())
                 .build();
     }
@@ -121,6 +122,30 @@ public class UserServiceImpl implements UserService {
         user.setIsActive(false);
         userRepository.save(user);
         log.info("[User] Admin vô hiệu hóa userId={}", userId);
+    }
+
+    @Override
+    @Transactional
+    public void disableUser(Integer userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", userId));
+
+        user.setIsActive(false);
+        userRepository.save(user);
+
+        log.info("[User] Admin vô hiệu hóa userId={}", userId);
+    }
+
+    @Override
+    @Transactional
+    public void enableUser(Integer userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", userId));
+
+        user.setIsActive(true);
+        userRepository.save(user);
+
+        log.info("[User] Admin mở khóa userId={}", userId);
     }
 
     // ── Upgrade Loyal Customer ────────────────────────────────────────────────

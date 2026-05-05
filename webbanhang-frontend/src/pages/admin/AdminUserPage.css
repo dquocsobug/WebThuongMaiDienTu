@@ -185,3 +185,261 @@
   padding: 30px;
   color: #64748b;
 }
+.admin-user-cell strong {
+  display: block;
+  color: #0f172a;
+}
+
+.admin-user-cell span {
+  display: block;
+  margin-top: 3px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.user-disabled-row {
+  background: #fff7f7;
+  opacity: 0.82;
+}
+
+.admin-status-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 5px 11px;
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.admin-status-badge.active {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.admin-status-badge.disabled {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.admin-icon-action {
+  border: 0;
+  transition: 0.2s ease;
+}
+
+.admin-icon-action:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
+.admin-icon-action:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.admin-icon-action.save {
+  color: #1d4ed8;
+}
+
+.admin-icon-action.loyal {
+  color: #b45309;
+}
+
+.admin-icon-action.danger {
+  color: #b91c1c;
+}
+
+.admin-icon-action.restore {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+/* Modal xác nhận */
+.admin-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  background: rgba(15, 23, 42, 0.56);
+  backdrop-filter: blur(6px);
+  display: grid;
+  place-items: center;
+  padding: 18px;
+}
+
+.admin-confirm-modal {
+  width: min(440px, 100%);
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 26px;
+  position: relative;
+  text-align: center;
+  box-shadow: 0 30px 80px rgba(15, 23, 42, 0.28);
+  animation: adminModalShow 0.22s ease;
+}
+
+@keyframes adminModalShow {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.admin-modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 12px;
+  background: #f1f5f9;
+  color: #0f172a;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.admin-modal-close:hover {
+  background: #e2e8f0;
+}
+
+.admin-modal-icon {
+  width: 62px;
+  height: 62px;
+  margin: 4px auto 16px;
+  border-radius: 20px;
+  display: grid;
+  place-items: center;
+}
+
+.admin-modal-icon.danger {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.admin-modal-icon.restore {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.admin-confirm-modal h3 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.admin-confirm-modal p {
+  margin: 12px 0 0;
+  color: #64748b;
+  line-height: 1.6;
+  font-weight: 600;
+}
+
+.admin-modal-actions {
+  margin-top: 24px;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.admin-modal-btn {
+  height: 42px;
+  border: 0;
+  border-radius: 14px;
+  padding: 0 18px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.admin-modal-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
+.admin-modal-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.admin-modal-btn.cancel {
+  background: #f1f5f9;
+  color: #334155;
+}
+
+.admin-modal-btn.danger {
+  background: #dc2626;
+  color: #ffffff;
+}
+
+.admin-modal-btn.restore {
+  background: #16a34a;
+  color: #ffffff;
+}
+
+@media (max-width: 760px) {
+  .admin-user-stats {
+    grid-template-columns: repeat(2, minmax(140px, 1fr));
+  }
+
+  .admin-modal-actions {
+    flex-direction: column;
+  }
+
+  .admin-modal-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 520px) {
+  .admin-user-stats {
+    grid-template-columns: 1fr;
+  }
+}
+.has-tooltip {
+  position: relative;
+}
+
+.has-tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 120%;
+  left: 50%;
+  transform: translateX(-50%) translateY(6px);
+  background: #0f172a;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 7px 10px;
+  border-radius: 10px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: 0.2s ease;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.22);
+  z-index: 20;
+}
+
+.has-tooltip::before {
+  content: "";
+  position: absolute;
+  bottom: 106%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 6px;
+  border-style: solid;
+  border-color: #0f172a transparent transparent transparent;
+  opacity: 0;
+  transition: 0.2s ease;
+  z-index: 21;
+}
+
+.has-tooltip:hover::after,
+.has-tooltip:hover::before {
+  opacity: 1;
+}

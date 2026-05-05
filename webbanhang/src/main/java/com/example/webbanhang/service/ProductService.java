@@ -6,6 +6,7 @@ import com.example.webbanhang.dto.response.PageResponse;
 import com.example.webbanhang.dto.response.ProductRatingStatsResponse;
 import com.example.webbanhang.dto.response.ProductResponse;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -48,4 +49,6 @@ public interface ProductService {
 
     /** Lấy sản phẩm đang có khuyến mãi. */
     List<ProductResponse> getProductsWithActivePromotion();
+    /** [ADMIN] Import danh sách sản phẩm từ file Excel. */
+    void importFromExcel(MultipartFile file);
 }

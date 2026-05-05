@@ -15,6 +15,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -211,6 +215,92 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
+    public void importFromExcel(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new BadRequestException("File Excel không được để trống");
+        }
+
+        if (!Objects.requireNonNull(file.getOriginalFilename()).endsWith(".xlsx")) {
+            throw new BadRequestException("Chỉ hỗ trợ file Excel .xlsx");
+        }
+
+        Integer currentUserId = SecurityUtil.getCurrentUserId();
+        User createdBy = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", currentUserId));
+
+        try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
+            Sheet sheet = workbook.getSheetAt(0);
+
+            int successCount = 0;
+
+            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+                Row row = sheet.getRow(i);
+                if (row == null) continue;
+
+                String productName = getStringCell(row.getCell(0));
+                BigDecimal price = getBigDecimalCell(row.getCell(1));
+                Integer stock = getIntegerCell(row.getCell(2));
+                Integer categoryId = getIntegerCell(row.getCell(3));
+                String mainImageUrl = getStringCell(row.getCell(4));
+                String description = getStringCell(row.getCell(5));
+
+                if (!StringUtils.hasText(productName)) {
+                    continue;
+                }
+
+                if (price == null || price.compareTo(BigDecimal.ZERO) <= 0) {
+                    throw new BadRequestException("Dòng " + (i + 1) + ": Giá sản phẩm không hợp lệ");
+                }
+
+                if (stock == null || stock < 0) {
+                    throw new BadRequestException("Dòng " + (i + 1) + ": Tồn kho không hợp lệ");
+                }
+
+                if (categoryId == null) {
+                    throw new BadRequestException("Dòng " + (i + 1) + ": Thiếu mã danh mục");
+                }
+
+                Category category = categoryRepository.findById(categoryId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Category", categoryId));
+
+                Product product = Product.builder()
+                        .productName(productName)
+                        .description(description)
+                        .price(price)
+                        .stock(stock)
+                        .category(category)
+                        .createdBy(createdBy)
+                        .isActive(true)
+                        .build();
+
+                Product savedProduct = productRepository.save(product);
+
+                if (StringUtils.hasText(mainImageUrl)) {
+                    ProductImage image = ProductImage.builder()
+                            .product(savedProduct)
+                            .imageUrl(mainImageUrl)
+                            .isMain(true)
+                            .displayOrder(1)
+                            .build();
+
+                    productImageRepository.save(image);
+                }
+
+                successCount++;
+            }
+
+            log.info("[Product] Import Excel thành công {} sản phẩm, adminId={}", successCount, currentUserId);
+
+        } catch (BadRequestException | ResourceNotFoundException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("[Product] Lỗi import Excel", e);
+            throw new BadRequestException("Import Excel thất bại: " + e.getMessage());
+        }
+    }
+
+    @Override
+    @Transactional
     public ProductResponse update(Integer productId, ProductRequest request) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", productId));
@@ -292,5 +382,61 @@ public class ProductServiceImpl implements ProductService {
         productImageRepository.clearMainImageByProductId(productId);
         image.setIsMain(true);
         productImageRepository.save(image);
+    }
+
+    private String getStringCell(Cell cell) {
+        if (cell == null) return null;
+
+        if (cell.getCellType() == CellType.STRING) {
+            return cell.getStringCellValue().trim();
+        }
+
+        if (cell.getCellType() == CellType.NUMERIC) {
+            double value = cell.getNumericCellValue();
+
+            if (value == Math.floor(value)) {
+                return String.valueOf((long) value);
+            }
+
+            return String.valueOf(value);
+        }
+
+        if (cell.getCellType() == CellType.BOOLEAN) {
+            return String.valueOf(cell.getBooleanCellValue());
+        }
+
+        return null;
+    }
+
+    private BigDecimal getBigDecimalCell(Cell cell) {
+        if (cell == null) return null;
+
+        if (cell.getCellType() == CellType.NUMERIC) {
+            return BigDecimal.valueOf(cell.getNumericCellValue());
+        }
+
+        if (cell.getCellType() == CellType.STRING) {
+            String value = cell.getStringCellValue().trim();
+            if (value.isBlank()) return null;
+            return new BigDecimal(value);
+        }
+
+        return null;
+    }
+
+    private Integer getIntegerCell(Cell cell) {
+        if (cell == null) return null;
+
+        if (cell.getCellType() == CellType.NUMERIC) {
+            return (int) cell.getNumericCellValue();
+        }
+
+        if (cell.getCellType() == CellType.STRING) {
+            String value = cell.getStringCellValue().trim();
+            if (value.isBlank()) return null;
+            return Integer.parseInt(value);
+        }
+
+        return null;
     }
 }

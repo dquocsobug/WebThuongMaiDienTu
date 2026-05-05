@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -82,6 +83,19 @@ public class ProductController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Tạo sản phẩm thành công", productService.create(request)));
+    }
+
+    // POST /api/products/import-excel
+    @PostMapping("/import-excel")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> importExcel(
+            @RequestParam("file") MultipartFile file) {
+
+        productService.importFromExcel(file);
+
+        return ResponseEntity.ok(
+                ApiResponse.success("Import sản phẩm từ Excel thành công")
+        );
     }
 
     // PUT /api/products/{productId}

@@ -1,10 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Users,
   Package,
   ShoppingCart,
   Newspaper,
+  Download,
 } from "lucide-react";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 import { userApi, productApi, orderApi, postApi } from "../../api";
 
 const unwrapList = (res) => {
@@ -19,6 +22,8 @@ const unwrapList = (res) => {
 };
 
 export default function AdminDashboardPage() {
+  const reportRef = useRef(null);
+
   const [counts, setCounts] = useState({
     users: 0,
     products: 0,
@@ -27,6 +32,7 @@ export default function AdminDashboardPage() {
   });
 
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -86,6 +92,49 @@ export default function AdminDashboardPage() {
     [counts]
   );
 
+  const handleExportPdf = async () => {
+    if (!reportRef.current) return;
+
+    setExporting(true);
+
+    try {
+      const canvas = await html2canvas(reportRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#f5f7fb",
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+
+      const imgWidth = pageWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      const today = new Date().toISOString().slice(0, 10);
+      pdf.save(`bao-cao-thong-ke-${today}.pdf`);
+    } catch (error) {
+      console.error("Lỗi xuất PDF:", error);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const maxValue = Math.max(...stats.map((item) => Number(item.value)), 1);
   const totalValue = stats.reduce((sum, item) => sum + Number(item.value), 0);
 
@@ -108,81 +157,95 @@ export default function AdminDashboardPage() {
 
   return (
     <div>
-      <div className="admin-page-title">
-        <h2>Tổng quan</h2>
-        <p>Theo dõi nhanh tình trạng website bán hàng.</p>
-      </div>
-
-      <div className="admin-grid">
-        {stats.map((item) => {
-          const Icon = item.icon;
-
-          return (
-            <div className="admin-stat-card" key={item.label}>
-              <Icon size={26} />
-              <span>{item.label}</span>
-              <strong>{loading ? "..." : item.value}</strong>
-              <p>{item.desc}</p>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="admin-dashboard-charts">
-        <div className="admin-card admin-chart-card">
-          <div className="admin-chart-header">
-            <h3>Biểu đồ cột</h3>
-            <p>So sánh số lượng người dùng, sản phẩm, đơn hàng và bài viết.</p>
-          </div>
-
-          <div className="admin-column-chart">
-            {stats.map((item) => {
-              const height = loading
-                ? 20
-                : Math.max((Number(item.value) / maxValue) * 180, 20);
-
-              return (
-                <div className="admin-column-item" key={item.label}>
-                  <div className="admin-column-value">
-                    {loading ? "..." : item.value}
-                  </div>
-
-                  <div className="admin-column-track">
-                    <div
-                      className="admin-column-fill"
-                      style={{ height: `${height}px` }}
-                    />
-                  </div>
-
-                  <span>{item.label}</span>
-                </div>
-              );
-            })}
-          </div>
+      <div className="admin-page-title admin-page-title-row">
+        <div>
+          <h2>Tổng quan</h2>
+          <p>Theo dõi nhanh tình trạng website bán hàng.</p>
         </div>
 
-        <div className="admin-card admin-chart-card">
-          <div className="admin-chart-header">
-            <h3>Biểu đồ tròn</h3>
-            <p>Tỷ trọng dữ liệu chính trong hệ thống.</p>
+        <button
+          className="admin-export-btn"
+          type="button"
+          onClick={handleExportPdf}
+          disabled={loading || exporting}
+        >
+          <Download size={18} />
+          {exporting ? "Đang xuất..." : "Xuất PDF"}
+        </button>
+      </div>
+
+      <div ref={reportRef} className="admin-report-area">
+        <div className="admin-grid">
+          {stats.map((item) => {
+            const Icon = item.icon;
+
+            return (
+              <div className="admin-stat-card" key={item.label}>
+                <Icon size={26} />
+                <span>{item.label}</span>
+                <strong>{loading ? "..." : item.value}</strong>
+                <p>{item.desc}</p>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="admin-dashboard-charts">
+          <div className="admin-card admin-chart-card">
+            <div className="admin-chart-header">
+              <h3>Biểu đồ cột</h3>
+              <p>So sánh số lượng người dùng, sản phẩm, đơn hàng và bài viết.</p>
+            </div>
+
+            <div className="admin-column-chart">
+              {stats.map((item) => {
+                const height = loading
+                  ? 20
+                  : Math.max((Number(item.value) / maxValue) * 180, 20);
+
+                return (
+                  <div className="admin-column-item" key={item.label}>
+                    <div className="admin-column-value">
+                      {loading ? "..." : item.value}
+                    </div>
+
+                    <div className="admin-column-track">
+                      <div
+                        className="admin-column-fill"
+                        style={{ height: `${height}px` }}
+                      />
+                    </div>
+
+                    <span>{item.label}</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
-          <div className="admin-pie-wrap">
-            <div
-              className="admin-pie-chart"
-              style={{
-                background: `conic-gradient(${pieGradient})`,
-              }}
-            />
+          <div className="admin-card admin-chart-card">
+            <div className="admin-chart-header">
+              <h3>Biểu đồ tròn</h3>
+              <p>Tỷ trọng dữ liệu chính trong hệ thống.</p>
+            </div>
 
-            <div className="admin-pie-legend">
-              {stats.map((item, index) => (
-                <div className="admin-pie-legend-item" key={item.label}>
-                  <span className={`admin-pie-dot dot-${index}`} />
-                  <p>{item.label}</p>
-                  <strong>{loading ? "..." : item.value}</strong>
-                </div>
-              ))}
+            <div className="admin-pie-wrap">
+              <div
+                className="admin-pie-chart"
+                style={{
+                  background: `conic-gradient(${pieGradient})`,
+                }}
+              />
+
+              <div className="admin-pie-legend">
+                {stats.map((item, index) => (
+                  <div className="admin-pie-legend-item" key={item.label}>
+                    <span className={`admin-pie-dot dot-${index}`} />
+                    <p>{item.label}</p>
+                    <strong>{loading ? "..." : item.value}</strong>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
