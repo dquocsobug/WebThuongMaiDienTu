@@ -47,6 +47,7 @@ export default function OrderDetailPage() {
   const [guides, setGuides] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -95,7 +96,36 @@ export default function OrderDetailPage() {
     return stepByStatus[order.status] || 1;
   }, [order]);
 
+  const handleCancelOrder = async () => {
+  const confirmed = window.confirm(
+  "🛑 Huỷ đơn hàng?\n\n" +
+  "Sau khi huỷ:\n" +
+  "• Đơn hàng sẽ chuyển sang trạng thái Đã huỷ\n" +
+  "• Bạn cần đặt lại nếu muốn mua sản phẩm này\n" +
+  "• Hệ thống sẽ hoàn lại tồn kho sản phẩm\n\n" +
+  "Bạn có chắc chắn muốn tiếp tục?"
+);
+
+  if (!confirmCancel) return;
+
+  try {
+    setCancelling(true);
+
+    await orderApi.cancelOrder(order.orderId);
+
+    setOrder((prev) => ({
+      ...prev,
+      status: "CANCELLED",
+    }));
+  } catch (err) {
+    alert(err?.response?.data?.message || "Không thể hủy đơn hàng");
+  } finally {
+    setCancelling(false);
+  }
+};
+
   const canWritePost = order?.status === "DELIVERED";
+  const canCancelOrder = order?.status === "PENDING";
 
   if (loading) {
     return <div className={styles.loading}>Đang tải chi tiết đơn hàng...</div>;
@@ -255,10 +285,22 @@ export default function OrderDetailPage() {
             </div>
           </section>
 
-          <button type="button" className={styles.supportBtn}>
-            <span>🎧</span>
-            Yêu cầu hỗ trợ
-          </button>
+          {canCancelOrder && (
+  <button
+    type="button"
+    className={styles.cancelOrderBtn}
+    onClick={handleCancelOrder}
+    disabled={cancelling}
+  >
+    <span>✕</span>
+    {cancelling ? "Đang hủy đơn..." : "Hủy đơn hàng"}
+  </button>
+)}
+
+<button type="button" className={styles.supportBtn}>
+  <span>🎧</span>
+  Yêu cầu hỗ trợ
+</button>
         </aside>
       </div>
 

@@ -10,7 +10,12 @@ const formatPrice = (n) => n?.toLocaleString("vi-VN") + "₫";
 const StarRating = ({ rating }) => (
   <div className={styles.stars}>
     {[1, 2, 3, 4, 5].map((i) => (
-      <span key={i} className={i <= Math.round(rating) ? styles.starOn : styles.starOff}>★</span>
+      <span
+        key={i}
+        className={i <= Math.round(rating) ? styles.starOn : styles.starOff}
+      >
+        ★
+      </span>
     ))}
   </div>
 );
@@ -21,9 +26,20 @@ const getImageUrl = (url) => {
   return `/images/${url}`;
 };
 
+const categoryIcons = ["📱", "💻", "📟", "🧩", "🎧", "🎁", "⌚", "📺", "🏠", "📷"];
+
+const serviceItems = [
+  { icon: "🚚", title: "Giao hàng nhanh", desc: "Miễn phí từ 500K" },
+  { icon: "🔄", title: "Đổi trả 7 ngày", desc: "Hoàn tiền nếu lỗi" },
+  { icon: "💳", title: "Thanh toán linh hoạt", desc: "COD, thẻ, ví điện tử" },
+  { icon: "🎧", title: "Hỗ trợ 24/7", desc: "Tư vấn mọi lúc" },
+];
+
 // ─── Product Card ─────────────────────────────────────────────────────────────
 const ProductCard = ({ product }) => {
-  const hasDiscount = product.discountedPrice && product.discountedPrice < product.price;
+  const hasDiscount =
+    product.discountedPrice && product.discountedPrice < product.price;
+
   const { addToCart } = useCart?.() || {};
   const [adding, setAdding] = useState(false);
   const [added, setAdded] = useState(false);
@@ -31,7 +47,9 @@ const ProductCard = ({ product }) => {
   const handleAddToCart = async (e) => {
     e.preventDefault();
     e.stopPropagation();
+
     if (!addToCart) return;
+
     try {
       setAdding(true);
       await addToCart(product.productId, 1);
@@ -48,9 +66,11 @@ const ProductCard = ({ product }) => {
         {hasDiscount && (
           <span className={styles.cardBadge}>-{product.discountPercent}%</span>
         )}
+
         {product.stock === 0 && (
           <div className={styles.cardOutOfStock}>Hết hàng</div>
         )}
+
         <img
           src={getImageUrl(product.mainImageUrl)}
           alt={product.productName}
@@ -58,31 +78,31 @@ const ProductCard = ({ product }) => {
           loading="lazy"
         />
 
-        {/* Hover overlay */}
         <div className={styles.cardOverlay}>
           <div className={styles.overlayActions}>
             <span className={styles.overlayBtn} title="Xem chi tiết">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                <circle cx="12" cy="12" r="3"/>
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
               </svg>
             </span>
+
             <button
-              className={`${styles.overlayBtn} ${added ? styles.overlayBtnAdded : ""}`}
+              className={`${styles.overlayBtn} ${
+                added ? styles.overlayBtnAdded : ""
+              }`}
               title="Thêm vào giỏ hàng"
               onClick={handleAddToCart}
               disabled={adding || product.stock === 0}
             >
-              {added ? (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
-              ) : (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
-                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
-                </svg>
-              )}
+              {added ? "✓" : "🛒"}
             </button>
           </div>
         </div>
@@ -90,23 +110,35 @@ const ProductCard = ({ product }) => {
 
       <div className={styles.cardBody}>
         <span className={styles.cardCategory}>{product.categoryName}</span>
+
         <h3 className={styles.cardName}>{product.productName}</h3>
+
         <div className={styles.cardMeta}>
           <StarRating rating={product.averageRating} />
           <span className={styles.cardReviewCount}>({product.reviewCount})</span>
         </div>
+
         <div className={styles.cardPricing}>
           {hasDiscount ? (
             <>
-              <span className={styles.priceNew}>{formatPrice(product.discountedPrice)}</span>
-              <span className={styles.priceOld}>{formatPrice(product.price)}</span>
+              <span className={styles.priceNew}>
+                {formatPrice(product.discountedPrice)}
+              </span>
+              <span className={styles.priceOld}>
+                {formatPrice(product.price)}
+              </span>
             </>
           ) : (
-            <span className={styles.priceNew}>{formatPrice(product.price)}</span>
+            <span className={styles.priceNew}>
+              {formatPrice(product.price)}
+            </span>
           )}
         </div>
+
         {product.stock > 0 && product.stock <= 5 && (
-          <span className={styles.lowStock}>Chỉ còn {product.stock} sản phẩm</span>
+          <span className={styles.lowStock}>
+            Chỉ còn {product.stock} sản phẩm
+          </span>
         )}
       </div>
     </Link>
@@ -119,39 +151,59 @@ const PriceRangeInput = ({ min, max, value, onChange }) => {
   const [localMax, setLocalMax] = useState(value[1]);
   const trackRef = useRef(null);
 
-  useEffect(() => { setLocalMin(value[0]); setLocalMax(value[1]); }, [value]);
+  useEffect(() => {
+    setLocalMin(value[0]);
+    setLocalMax(value[1]);
+  }, [value]);
 
   const toPercent = (v) => ((v - min) / (max - min)) * 100;
-  const commitChange = () => onChange([localMin, localMax]);
+
+  const commitChange = () => {
+    onChange([localMin, localMax]);
+  };
 
   return (
     <div className={styles.priceRange}>
       <div className={styles.priceRangeTrack} ref={trackRef}>
         <div
           className={styles.priceRangeFill}
-          style={{ left: `${toPercent(localMin)}%`, width: `${toPercent(localMax) - toPercent(localMin)}%` }}
+          style={{
+            left: `${toPercent(localMin)}%`,
+            width: `${toPercent(localMax) - toPercent(localMin)}%`,
+          }}
         />
+
         <input
-          type="range" min={min} max={max} step={100000}
+          type="range"
+          min={min}
+          max={max}
+          step={100000}
           value={localMin}
           className={`${styles.rangeInput} ${styles.rangeMin}`}
           onChange={(e) => {
             const v = Math.min(Number(e.target.value), localMax - 100000);
             setLocalMin(v);
           }}
-          onMouseUp={commitChange} onTouchEnd={commitChange}
+          onMouseUp={commitChange}
+          onTouchEnd={commitChange}
         />
+
         <input
-          type="range" min={min} max={max} step={100000}
+          type="range"
+          min={min}
+          max={max}
+          step={100000}
           value={localMax}
           className={`${styles.rangeInput} ${styles.rangeMax}`}
           onChange={(e) => {
             const v = Math.max(Number(e.target.value), localMin + 100000);
             setLocalMax(v);
           }}
-          onMouseUp={commitChange} onTouchEnd={commitChange}
+          onMouseUp={commitChange}
+          onTouchEnd={commitChange}
         />
       </div>
+
       <div className={styles.priceRangeLabels}>
         <span>{formatPrice(localMin)}</span>
         <span>{formatPrice(localMax)}</span>
@@ -189,17 +241,26 @@ export default function ProductsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [keyword, setKeyword] = useState(searchParams.get("keyword") || "");
+
   const [selectedCategories, setSelectedCategories] = useState(
-    searchParams.get("categoryId") ? [Number(searchParams.get("categoryId"))] : []
+    searchParams.get("categoryId")
+      ? [Number(searchParams.get("categoryId"))]
+      : []
   );
+
   const [priceRange, setPriceRange] = useState([
     Number(searchParams.get("minPrice")) || PRICE_MIN,
     Number(searchParams.get("maxPrice")) || PRICE_MAX,
   ]);
+
   const [sort, setSort] = useState(searchParams.get("sort") || "");
   const [page, setPage] = useState(0);
-  const [viewMode, setViewMode] = useState("grid"); // grid | list
-
+  const [viewMode, setViewMode] = useState("grid");
+  const [flashTime, setFlashTime] = useState({
+  hours: 12,
+  minutes: 37,
+  seconds: 16,
+});
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [totalPages, setTotalPages] = useState(0);
@@ -212,7 +273,8 @@ export default function ProductsPage() {
   const debounceRef = useRef(null);
 
   useEffect(() => {
-    axiosClient.get("/categories")
+    axiosClient
+      .get("/categories")
       .then((res) => {
         const data = res?.data?.data || res?.data || res;
         setCategories(Array.isArray(data) ? data : []);
@@ -221,18 +283,54 @@ export default function ProductsPage() {
       .finally(() => setCatLoading(false));
   }, []);
 
+  useEffect(() => {
+  const timer = setInterval(() => {
+    setFlashTime((prev) => {
+      let { hours, minutes, seconds } = prev;
+
+      if (seconds > 0) {
+        seconds--;
+      } else {
+        if (minutes > 0) {
+          minutes--;
+          seconds = 59;
+        } else {
+          if (hours > 0) {
+            hours--;
+            minutes = 59;
+            seconds = 59;
+          } else {
+            hours = 12;
+            minutes = 37;
+            seconds = 16;
+          }
+        }
+      }
+
+      return { hours, minutes, seconds };
+    });
+  }, 1000);
+
+  return () => clearInterval(timer);
+}, []);
+
   const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
+
       const params = { page, size: 12 };
+
       if (keyword) params.keyword = keyword;
-      if (selectedCategories.length === 1) params.categoryId = selectedCategories[0];
+      if (selectedCategories.length === 1) {
+        params.categoryId = selectedCategories[0];
+      }
       if (priceRange[0] > PRICE_MIN) params.minPrice = priceRange[0];
       if (priceRange[1] < PRICE_MAX) params.maxPrice = priceRange[1];
       if (sort) params.sort = sort;
 
       const res = await axiosClient.get("/products", { params });
       const data = res?.data?.data || res?.data || res;
+
       setProducts(data?.content || []);
       setTotalPages(data?.totalPages || 0);
       setTotalElements(data?.totalElements || 0);
@@ -243,22 +341,27 @@ export default function ProductsPage() {
     }
   }, [keyword, selectedCategories, priceRange, sort, page]);
 
-  useEffect(() => { fetchProducts(); }, [fetchProducts]);
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   useEffect(() => {
     const p = {};
+
     if (keyword) p.keyword = keyword;
     if (selectedCategories.length === 1) p.categoryId = selectedCategories[0];
     if (priceRange[0] > PRICE_MIN) p.minPrice = priceRange[0];
     if (priceRange[1] < PRICE_MAX) p.maxPrice = priceRange[1];
     if (sort) p.sort = sort;
     if (page > 0) p.page = page;
+
     setSearchParams(p, { replace: true });
-  }, [keyword, selectedCategories, priceRange, sort, page]);
+  }, [keyword, selectedCategories, priceRange, sort, page, setSearchParams]);
 
   const handleKeywordChange = (e) => {
     setInputValue(e.target.value);
     clearTimeout(debounceRef.current);
+
     debounceRef.current = setTimeout(() => {
       setKeyword(e.target.value);
       setPage(0);
@@ -267,16 +370,24 @@ export default function ProductsPage() {
 
   const handleCategoryToggle = (id) => {
     setSelectedCategories((prev) =>
-      prev.includes(id) ? prev.filter((c) => c !== id) : [id]
+      prev.includes(id) ? [] : [id]
     );
     setPage(0);
   };
 
-  const handleSortChange = (e) => { setSort(e.target.value); setPage(0); };
-  const handlePriceChange = (range) => { setPriceRange(range); setPage(0); };
+  const handleSortChange = (e) => {
+    setSort(e.target.value);
+    setPage(0);
+  };
+
+  const handlePriceChange = (range) => {
+    setPriceRange(range);
+    setPage(0);
+  };
 
   const handleClearFilters = () => {
-    setKeyword(""); setInputValue("");
+    setKeyword("");
+    setInputValue("");
     setSelectedCategories([]);
     setPriceRange([PRICE_MIN, PRICE_MAX]);
     setSort("");
@@ -284,8 +395,11 @@ export default function ProductsPage() {
   };
 
   const hasActiveFilters =
-    keyword || selectedCategories.length > 0 ||
-    priceRange[0] > PRICE_MIN || priceRange[1] < PRICE_MAX || sort;
+    keyword ||
+    selectedCategories.length > 0 ||
+    priceRange[0] > PRICE_MIN ||
+    priceRange[1] < PRICE_MAX ||
+    sort;
 
   const activeFilterCount = [
     keyword ? 1 : 0,
@@ -297,22 +411,37 @@ export default function ProductsPage() {
   return (
     <div className={styles.page}>
       {sidebarOpen && (
-        <div className={styles.overlay} onClick={() => setSidebarOpen(false)} />
+        <div
+          className={styles.overlay}
+          onClick={() => setSidebarOpen(false)}
+        />
       )}
 
       {/* ── Header bar ── */}
       <div className={styles.topBar}>
         <div className={styles.topBarInner}>
           <div className={styles.breadcrumb}>
-            <Link to="/" className={styles.breadcrumbLink}>Trang chủ</Link>
+            <Link to="/" className={styles.breadcrumbLink}>
+              Trang chủ
+            </Link>
             <span className={styles.breadcrumbSep}>/</span>
             <span>Sản phẩm</span>
           </div>
 
           <div className={styles.searchWrap}>
-            <svg className={styles.searchIcon} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+            <svg
+              className={styles.searchIcon}
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.35-4.35" />
             </svg>
+
             <input
               className={styles.searchInput}
               type="text"
@@ -320,48 +449,85 @@ export default function ProductsPage() {
               value={inputValue}
               onChange={handleKeywordChange}
             />
+
             {inputValue && (
-              <button className={styles.searchClear} onClick={() => { setInputValue(""); setKeyword(""); setPage(0); }}>✕</button>
+              <button
+                className={styles.searchClear}
+                onClick={() => {
+                  setInputValue("");
+                  setKeyword("");
+                  setPage(0);
+                }}
+              >
+                ✕
+              </button>
             )}
           </div>
 
           <div className={styles.topBarRight}>
-            <select className={styles.sortSelect} value={sort} onChange={handleSortChange}>
+            <select
+  className={styles.priceQuickFilter}
+  value={`${priceRange[0]}-${priceRange[1]}`}
+  onChange={(e) => {
+    const value = e.target.value;
+
+    if (value === "all") {
+      setPriceRange([PRICE_MIN, PRICE_MAX]);
+      return;
+    }
+
+    const [min, max] = value.split("-").map(Number);
+    setPriceRange([min, max]);
+    setPage(0);
+  }}
+>
+  <option value="all">Tất cả mức giá</option>
+  <option value="0-1000000">Dưới 1 triệu</option>
+  <option value="1000000-5000000">1 - 5 triệu</option>
+  <option value="5000000-10000000">5 - 10 triệu</option>
+  <option value="10000000-20000000">10 - 20 triệu</option>
+  <option value="20000000-50000000">Trên 20 triệu</option>
+</select>
+            <select
+              className={styles.sortSelect}
+              value={sort}
+              onChange={handleSortChange}
+            >
               {SORT_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
               ))}
             </select>
 
-            {/* View mode toggle */}
             <div className={styles.viewToggle}>
               <button
-                className={`${styles.viewBtn} ${viewMode === "grid" ? styles.viewBtnActive : ""}`}
+                className={`${styles.viewBtn} ${
+                  viewMode === "grid" ? styles.viewBtnActive : ""
+                }`}
                 onClick={() => setViewMode("grid")}
                 title="Lưới"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                  <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
-                  <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
-                </svg>
+                ▦
               </button>
+
               <button
-                className={`${styles.viewBtn} ${viewMode === "list" ? styles.viewBtnActive : ""}`}
+                className={`${styles.viewBtn} ${
+                  viewMode === "list" ? styles.viewBtnActive : ""
+                }`}
                 onClick={() => setViewMode("list")}
                 title="Danh sách"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                  <rect x="3" y="4" width="18" height="3" rx="1"/><rect x="3" y="10.5" width="18" height="3" rx="1"/><rect x="3" y="17" width="18" height="3" rx="1"/>
-                </svg>
+                ☰
               </button>
             </div>
 
             <button
-              className={`${styles.filterToggleBtn} ${sidebarOpen ? styles.filterToggleBtnActive : ""}`}
+              className={`${styles.filterToggleBtn} ${
+                sidebarOpen ? styles.filterToggleBtnActive : ""
+              }`}
               onClick={() => setSidebarOpen((v) => !v)}
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="4" y1="6" x2="20" y2="6" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="12" y1="18" x2="12" y2="18" strokeLinecap="round" />
-              </svg>
               Bộ lọc
               {activeFilterCount > 0 && (
                 <span className={styles.filterBadge}>{activeFilterCount}</span>
@@ -371,64 +537,87 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      <div className={styles.layout}>
-        {/* ── SIDEBAR ── */}
-        <aside className={`${styles.sidebar} ${sidebarOpen ? styles.sidebarOpen : ""}`}>
-          <div className={styles.sidebarHeader}>
-            <h2 className={styles.sidebarTitle}>Bộ lọc</h2>
-            <div className={styles.sidebarHeaderRight}>
-              {hasActiveFilters && (
-                <button className={styles.clearBtn} onClick={handleClearFilters}>Xoá tất cả</button>
-              )}
-              <button className={styles.sidebarClose} onClick={() => setSidebarOpen(false)}>✕</button>
+      {/* ── Category + Service + Flash Sale ── */}
+      <div className={styles.shopHeader}>
+        <div className={styles.categoryShortcut}>
+          <button
+            className={`${styles.categoryCard} ${
+              selectedCategories.length === 0 ? styles.categoryCardActive : ""
+            }`}
+            onClick={() => {
+              setSelectedCategories([]);
+              setPage(0);
+            }}
+          >
+            <span className={styles.categoryIcon}>🛒</span>
+            <span>Tất cả</span>
+          </button>
+
+          {catLoading
+            ? Array.from({ length: 8 }).map((_, index) => (
+                <div key={index} className={styles.categoryCardSkeleton} />
+              ))
+            : categories.map((cat, index) => (
+                <button
+                  key={cat.categoryId}
+                  className={`${styles.categoryCard} ${
+                    selectedCategories.includes(cat.categoryId)
+                      ? styles.categoryCardActive
+                      : ""
+                  }`}
+                  onClick={() => handleCategoryToggle(cat.categoryId)}
+                >
+                  <span className={styles.categoryIcon}>
+                    {categoryIcons[index % categoryIcons.length]}
+                  </span>
+                  <span>{cat.categoryName}</span>
+                </button>
+              ))}
+        </div>
+
+        <div className={styles.serviceBar}>
+          {serviceItems.map((item) => (
+            <div key={item.title} className={styles.serviceItem}>
+              <span className={styles.serviceIcon}>{item.icon}</span>
+              <div>
+                <h4>{item.title}</h4>
+                <p>{item.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className={styles.flashSaleBar}>
+          <div className={styles.flashLeft}>
+            <span className={styles.flashIcon}>⚡</span>
+            <div>
+              <h3>FLASH SALE</h3>
+              <p>Giảm giá sốc - Số lượng có hạn</p>
             </div>
           </div>
 
-          <div className={styles.filterSection}>
-            <h3 className={styles.filterLabel}>Danh mục</h3>
-            {catLoading ? (
-              <div className={styles.catSkeleton}>
-                {[1,2,3].map(i => <div key={i} className={styles.catSkeletonItem} />)}
-              </div>
-            ) : (
-              <div className={styles.categoryList}>
-                <button
-                  className={`${styles.catItem} ${selectedCategories.length === 0 ? styles.catItemActive : ""}`}
-                  onClick={() => { setSelectedCategories([]); setPage(0); }}
-                >
-                  <span className={styles.catName}>Tất cả</span>
-                  <span className={styles.catCount}>{totalElements}</span>
-                </button>
-                {categories.map((cat) => (
-                  <button
-                    key={cat.categoryId}
-                    className={`${styles.catItem} ${selectedCategories.includes(cat.categoryId) ? styles.catItemActive : ""}`}
-                    onClick={() => handleCategoryToggle(cat.categoryId)}
-                  >
-                    <span className={styles.catName}>{cat.categoryName}</span>
-                    <span className={styles.catCount}>{cat.productCount}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <div className={styles.flashRight}>
+            <span>Kết thúc sau</span>
+            <div className={styles.flashRight}>
+  <span>Kết thúc sau</span>
 
-          <div className={styles.filterSection}>
-            <h3 className={styles.filterLabel}>Khoảng giá</h3>
-            <PriceRangeInput
-              min={PRICE_MIN}
-              max={PRICE_MAX}
-              value={priceRange}
-              onChange={handlePriceChange}
-            />
-          </div>
+  <strong>{String(flashTime.hours).padStart(2, "0")}</strong>
+  <span className={styles.flashColon}>:</span>
 
-          <div className={styles.sidebarApply}>
-            <button className={styles.applyBtn} onClick={() => setSidebarOpen(false)}>
-              Xem {totalElements} sản phẩm
-            </button>
+  <strong>{String(flashTime.minutes).padStart(2, "0")}</strong>
+  <span className={styles.flashColon}>:</span>
+
+  <strong>{String(flashTime.seconds).padStart(2, "0")}</strong>
+</div>
+            <Link to="/promotions" className={styles.flashBtn}>
+              Xem tất cả →
+            </Link>
           </div>
-        </aside>
+        </div>
+      </div>
+
+      <div className={styles.layout}>
+        {/* ── SIDEBAR FILTER PRICE ── */}
 
         {/* ── MAIN CONTENT ── */}
         <main className={styles.main}>
@@ -437,70 +626,140 @@ export default function ProductsPage() {
               <span className={styles.resultText}>Đang tải...</span>
             ) : (
               <span className={styles.resultText}>
-                {totalElements > 0 ? `${totalElements} sản phẩm` : "Không có sản phẩm"}
-                {keyword && <> cho "<strong>{keyword}</strong>"</>}
+                {totalElements > 0
+                  ? `${totalElements} sản phẩm`
+                  : "Không có sản phẩm"}
+                {keyword && (
+                  <>
+                    {" "}
+                    cho "<strong>{keyword}</strong>"
+                  </>
+                )}
               </span>
             )}
 
             <div className={styles.filterChips}>
-              {selectedCategories.length > 0 && categories
-                .filter(c => selectedCategories.includes(c.categoryId))
-                .map(c => (
-                  <span key={c.categoryId} className={styles.chip}>
-                    {c.categoryName}
-                    <button onClick={() => handleCategoryToggle(c.categoryId)}>✕</button>
-                  </span>
-                ))}
+              {selectedCategories.length > 0 &&
+                categories
+                  .filter((c) => selectedCategories.includes(c.categoryId))
+                  .map((c) => (
+                    <span key={c.categoryId} className={styles.chip}>
+                      {c.categoryName}
+                      <button onClick={() => handleCategoryToggle(c.categoryId)}>
+                        ✕
+                      </button>
+                    </span>
+                  ))}
+
               {(priceRange[0] > PRICE_MIN || priceRange[1] < PRICE_MAX) && (
                 <span className={styles.chip}>
                   {formatPrice(priceRange[0])} – {formatPrice(priceRange[1])}
-                  <button onClick={() => { setPriceRange([PRICE_MIN, PRICE_MAX]); setPage(0); }}>✕</button>
+                  <button
+                    onClick={() => {
+                      setPriceRange([PRICE_MIN, PRICE_MAX]);
+                      setPage(0);
+                    }}
+                  >
+                    ✕
+                  </button>
                 </span>
               )}
+
               {sort && (
                 <span className={styles.chip}>
-                  {SORT_OPTIONS.find(o => o.value === sort)?.label}
-                  <button onClick={() => { setSort(""); setPage(0); }}>✕</button>
+                  {SORT_OPTIONS.find((o) => o.value === sort)?.label}
+                  <button
+                    onClick={() => {
+                      setSort("");
+                      setPage(0);
+                    }}
+                  >
+                    ✕
+                  </button>
                 </span>
               )}
             </div>
           </div>
 
-          {/* Product grid / list */}
           {loading ? (
             <div className={styles.grid}>
-              {Array.from({ length: 12 }).map((_, i) => <SkeletonCard key={i} />)}
+              {Array.from({ length: 12 }).map((_, i) => (
+                <SkeletonCard key={i} />
+              ))}
             </div>
           ) : products.length === 0 ? (
             <div className={styles.empty}>
               <div className={styles.emptyIcon}>🔍</div>
               <h3 className={styles.emptyTitle}>Không tìm thấy sản phẩm</h3>
-              <p className={styles.emptyDesc}>Thử thay đổi bộ lọc hoặc từ khoá tìm kiếm.</p>
-              <button className={styles.emptyBtn} onClick={handleClearFilters}>Xoá bộ lọc</button>
+              <p className={styles.emptyDesc}>
+                Thử thay đổi bộ lọc hoặc từ khoá tìm kiếm.
+              </p>
+              <button
+                className={styles.emptyBtn}
+                onClick={handleClearFilters}
+              >
+                Xoá bộ lọc
+              </button>
             </div>
           ) : (
-            <div className={`${styles.grid} ${viewMode === "list" ? styles.gridList : ""}`}>
-              {products.map((p) => <ProductCard key={p.productId} product={p} />)}
+            <div
+              className={`${styles.grid} ${
+                viewMode === "list" ? styles.gridList : ""
+              }`}
+            >
+              {products.map((p) => (
+                <ProductCard key={p.productId} product={p} />
+              ))}
             </div>
           )}
 
           {totalPages > 1 && (
             <div className={styles.pagination}>
-              <button className={styles.pageBtn} disabled={page === 0} onClick={() => setPage(0)}>«</button>
-              <button className={styles.pageBtn} disabled={page === 0} onClick={() => setPage((p) => p - 1)}>‹</button>
+              <button
+                className={styles.pageBtn}
+                disabled={page === 0}
+                onClick={() => setPage(0)}
+              >
+                «
+              </button>
+
+              <button
+                className={styles.pageBtn}
+                disabled={page === 0}
+                onClick={() => setPage((p) => p - 1)}
+              >
+                ‹
+              </button>
 
               {Array.from({ length: totalPages }, (_, i) => i)
-                .filter(i => Math.abs(i - page) <= 2)
+                .filter((i) => Math.abs(i - page) <= 2)
                 .map((i) => (
                   <button
                     key={i}
-                    className={`${styles.pageBtn} ${i === page ? styles.pageBtnActive : ""}`}
+                    className={`${styles.pageBtn} ${
+                      i === page ? styles.pageBtnActive : ""
+                    }`}
                     onClick={() => setPage(i)}
-                  >{i + 1}</button>
+                  >
+                    {i + 1}
+                  </button>
                 ))}
 
-              <button className={styles.pageBtn} disabled={page >= totalPages - 1} onClick={() => setPage((p) => p + 1)}>›</button>
-              <button className={styles.pageBtn} disabled={page >= totalPages - 1} onClick={() => setPage(totalPages - 1)}>»</button>
+              <button
+                className={styles.pageBtn}
+                disabled={page >= totalPages - 1}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                ›
+              </button>
+
+              <button
+                className={styles.pageBtn}
+                disabled={page >= totalPages - 1}
+                onClick={() => setPage(totalPages - 1)}
+              >
+                »
+              </button>
             </div>
           )}
         </main>

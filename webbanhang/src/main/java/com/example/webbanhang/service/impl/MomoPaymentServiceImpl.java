@@ -48,7 +48,7 @@ public class MomoPaymentServiceImpl implements MomoPaymentService {
     private String ipnUrl;
 
     @Override
-    public MomoCreatePaymentResponse createPayment(Integer orderId) {
+    public MomoCreatePaymentResponse createPayment(Integer orderId, Long amountFromClient) {
         try {
             Order order = orderRepository.findById(orderId)
                     .orElseThrow(() -> new ResourceNotFoundException("Order", orderId));
@@ -58,7 +58,11 @@ public class MomoPaymentServiceImpl implements MomoPaymentService {
             String orderInfo = "Thanh toan don hang #" + order.getOrderId();
             String requestType = "captureWallet";
             String extraData = "";
-            String amount = String.valueOf(order.getFinalAmount().longValue());
+            if (amountFromClient == null || amountFromClient <= 0) {
+                throw new RuntimeException("Số tiền thanh toán không hợp lệ");
+            }
+
+            String amount = String.valueOf(amountFromClient);
 
             String rawHash =
                     "accessKey=" + accessKey +

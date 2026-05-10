@@ -199,6 +199,9 @@ public class SecurityConfig {
 
                         .requestMatchers(HttpMethod.POST, "/payments/momo/create").authenticated()
                         .requestMatchers(HttpMethod.POST, "/payments/momo/ipn").permitAll()
+
+                        // ── PUBLIC: AI Chat ──────────────────────────────────────
+                        .requestMatchers(HttpMethod.POST, "/ai/chat").permitAll()
                         // ── Đã đăng nhập: tất cả còn lại ─────────────────────────
                         .anyRequest().authenticated()
                 )

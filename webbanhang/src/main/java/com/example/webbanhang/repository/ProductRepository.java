@@ -22,6 +22,7 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
 
     List<Product> findByCategoryCategoryId(Integer categoryId);
 
+
     // FIX: thêm findByIdAndIsActiveTrue — getById chỉ lấy sản phẩm đang bán
     Optional<Product> findByProductIdAndIsActiveTrue(Integer productId);
 

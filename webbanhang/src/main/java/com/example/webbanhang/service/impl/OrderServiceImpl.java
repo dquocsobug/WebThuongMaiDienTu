@@ -352,6 +352,12 @@ public class OrderServiceImpl implements OrderService {
             throw new BadRequestException("Chỉ có thể huỷ đơn hàng đang ở trạng thái PENDING");
         }
 
+        if (order.getPaymentStatus() == PaymentStatus.PAID) {
+            throw new BadRequestException(
+                    "Đơn hàng đã thanh toán, vui lòng liên hệ hỗ trợ để được xử lý hoàn tiền"
+            );
+        }
+
         List<OrderDetail> details = orderDetailRepository.findByOrderOrderId(orderId);
 
         details.forEach(detail ->

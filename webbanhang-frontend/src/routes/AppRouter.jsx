@@ -23,6 +23,7 @@ const MyReviewsPage = lazy(() => import("../pages/MyReviewsPage"));
 const WriterPostPage = lazy(() => import("../pages/WriterPostPage"));
 const CreatePostPage = lazy(() => import("../pages/CreatePostPage"));
 const NotFoundPage = lazy(() => import("../pages/NotFoundPage"));
+const PaymentResultPage = lazy(() => import("../pages/PaymentResultPage"));
 
 // Admin pages
 const AdminLayout = lazy(() => import("../components/admin/AdminLayout"));
@@ -49,6 +50,10 @@ const router = createBrowserRouter([
   {
     path: "/register",
     element: withSuspense(RegisterPage),
+  },
+  {
+  path: "/payment/momo-return",
+  element: withSuspense(PaymentResultPage),
   },
 
   {

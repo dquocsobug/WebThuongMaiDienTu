@@ -45,7 +45,11 @@ const getFinalPrice = (p) => p?.discountedPrice || p?.price || 0;
 
 export default function PromotionsPage() {
   const { addToCart } = useCart();
-
+  const [flashTime, setFlashTime] = useState({
+  hours: 12,
+  minutes: 45,
+  seconds: 30,
+});
   const [products, setProducts] = useState([]);
   const [promotions, setPromotions] = useState([]);
   const [posts, setPosts] = useState([]);
@@ -54,6 +58,33 @@ export default function PromotionsPage() {
   const [discountFilters, setDiscountFilters] = useState([]);
   const [brandFilters, setBrandFilters] = useState([]);
   const [addingId, setAddingId] = useState(null);
+
+  useEffect(() => {
+  const timer = setInterval(() => {
+    setFlashTime((prev) => {
+      let { hours, minutes, seconds } = prev;
+
+      if (seconds > 0) {
+        seconds -= 1;
+      } else if (minutes > 0) {
+        minutes -= 1;
+        seconds = 59;
+      } else if (hours > 0) {
+        hours -= 1;
+        minutes = 59;
+        seconds = 59;
+      } else {
+        hours = 12;
+        minutes = 45;
+        seconds = 30;
+      }
+
+      return { hours, minutes, seconds };
+    });
+  }, 1000);
+
+  return () => clearInterval(timer);
+}, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -175,10 +206,10 @@ export default function PromotionsPage() {
             </p>
 
             <div className={styles.countdown}>
-              <TimeBox value="12" label="Giờ" />
-              <TimeBox value="45" label="Phút" />
-              <TimeBox value="30" label="Giây" />
-            </div>
+  <TimeBox value={String(flashTime.hours).padStart(2, "0")} label="Giờ" />
+  <TimeBox value={String(flashTime.minutes).padStart(2, "0")} label="Phút" />
+  <TimeBox value={String(flashTime.seconds).padStart(2, "0")} label="Giây" />
+</div>
 
             <div className={styles.couponBox}>
               <div>

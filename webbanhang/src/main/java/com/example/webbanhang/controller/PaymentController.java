@@ -21,7 +21,7 @@ public class PaymentController {
     ) {
         return ResponseEntity.ok(
                 ApiResponse.success("Tạo thanh toán MoMo thành công",
-                        momoPaymentService.createPayment(request.getOrderId()))
+                        momoPaymentService.createPayment(request.getOrderId(), request.getAmount()))
         );
     }
 

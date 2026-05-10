@@ -29,19 +29,27 @@ const createVietQrUrl = ({ amount, content }) => {
   )}`;
 };
 
+
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const location = useLocation();
-const directData = location.state;
-const isDirect = directData?.mode === "DIRECT";
+  const savedCheckoutState = JSON.parse(
+    sessionStorage.getItem("checkoutState") || "null"
+  );
+
+  const directData = location.state || savedCheckoutState;
+  const isDirect = directData?.mode === "DIRECT";
   const [cart, setCart] = useState(null);
+  const [savedItems, setSavedItems] = useState(
+  savedCheckoutState?.items || []
+);
   const [user, setUser] = useState(null);
   const [shippingMethod, setShippingMethod] = useState("FAST");
   const [paymentMethod, setPaymentMethod] = useState("COD");
   const [couponCode, setCouponCode] = useState("");
-const [appliedVoucher, setAppliedVoucher] = useState(null);
-const [voucherMessage, setVoucherMessage] = useState("");
-const [applyingVoucher, setApplyingVoucher] = useState(false);
+  const [appliedVoucher, setAppliedVoucher] = useState(null);
+  const [voucherMessage, setVoucherMessage] = useState("");
+  const [applyingVoucher, setApplyingVoucher] = useState(false);
   const [loading, setLoading] = useState(true);
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState("");
@@ -53,7 +61,32 @@ const [applyingVoucher, setApplyingVoucher] = useState(false);
     address: "",
     note: "",
   });
+useEffect(() => {
+  if (!savedCheckoutState) return;
 
+  if (savedCheckoutState.form) {
+    setForm((prev) => ({
+      ...prev,
+      ...savedCheckoutState.form,
+    }));
+  }
+
+  if (savedCheckoutState.shippingMethod) {
+    setShippingMethod(savedCheckoutState.shippingMethod);
+  }
+
+  if (savedCheckoutState.paymentMethod) {
+    setPaymentMethod(savedCheckoutState.paymentMethod);
+  }
+
+  if (savedCheckoutState.couponCode) {
+    setCouponCode(savedCheckoutState.couponCode);
+  }
+
+  if (savedCheckoutState.appliedVoucher) {
+    setAppliedVoucher(savedCheckoutState.appliedVoucher);
+  }
+}, []);
   const orderCode = useMemo(() => `DH${Date.now()}`, []);
 
   const items = isDirect
@@ -71,12 +104,13 @@ const [applyingVoucher, setApplyingVoucher] = useState(false);
           ) * Number(directData.quantity || 1),
       },
     ]
-  : cart?.items || [];
+  : cart?.items?.length
+  ? cart.items
+  : savedItems;
 
   const subtotal = Number(
-    cart?.totalAmount ??
-      items.reduce((sum, item) => sum + Number(item.subtotal || 0), 0)
-  );
+  items.reduce((sum, item) => sum + Number(item.subtotal || 0), 0)
+);
 
   const shippingFee = shippingMethod === "FAST" ? 45000 : 0;
   const discountAmount = Number(appliedVoucher?.discountAmount || 0);
@@ -127,7 +161,7 @@ const total = Math.max(subtotal + shippingFee - discountAmount, 0);
 
         const [cartRes, userRes] = await Promise.allSettled([
           cartApi.getCart(),
-          userApi?.getMe?.(),
+          userApi.getProfile()
         ]);
 
         if (cartRes.status === "fulfilled") {
@@ -201,6 +235,28 @@ const total = Math.max(subtotal + shippingFee - discountAmount, 0);
     }));
   };
 
+  const handleChangePaymentMethod = (method) => {
+  setPaymentMethod(method);
+  setError("");
+
+  sessionStorage.setItem(
+    "checkoutState",
+    JSON.stringify({
+      mode: isDirect ? "DIRECT" : "CART",
+      productId: directData?.productId,
+      product: directData?.product,
+      quantity: directData?.quantity || 1,
+      items,
+      form,
+      shippingMethod,
+      paymentMethod: method,
+      couponCode,
+      appliedVoucher,
+      pendingOrderId: savedCheckoutState?.pendingOrderId || null,
+    })
+  );
+};
+
   const handleApplyVoucher = async () => {
   setVoucherMessage("");
   setError("");
@@ -273,7 +329,17 @@ const total = Math.max(subtotal + shippingFee - discountAmount, 0);
 
       let createdOrder;
 
-if (isDirect) {
+if (savedCheckoutState?.pendingOrderId) {
+  createdOrder = {
+    orderId: savedCheckoutState.pendingOrderId,
+  };
+
+  if (paymentMethod !== "MOMO") {
+    sessionStorage.removeItem("checkoutState");
+    navigate("/orders", { replace: true });
+    return;
+  }
+} else if (isDirect) {
   createdOrder = await orderApi.createDirectOrder({
     ...payload,
     productId: directData.productId,
@@ -283,17 +349,34 @@ if (isDirect) {
   createdOrder = await orderApi.createOrder(payload);
 }
 
-// 👉 Nếu chọn MoMo thì redirect
 if (paymentMethod === "MOMO") {
+  sessionStorage.setItem(
+    "checkoutState",
+    JSON.stringify({
+      mode: isDirect ? "DIRECT" : "CART",
+      productId: directData?.productId,
+      product: directData?.product,
+      quantity: directData?.quantity || 1,
+      items,
+      form,
+      shippingMethod,
+      paymentMethod: "MOMO",
+      couponCode,
+      appliedVoucher,
+      pendingOrderId: createdOrder.orderId,
+    })
+  );
+
   const momoData = await paymentApi.createMomoPayment({
     orderId: createdOrder.orderId,
+    amount: Math.round(total),
   });
 
-  window.location.href = momoData.payUrl;
+  window.location.assign(momoData.payUrl);
   return;
 }
 
-// 👉 Nếu không phải MoMo thì đi bình thường
+sessionStorage.removeItem("checkoutState");
 navigate("/orders", { replace: true });
     } catch (err) {
       console.error("Lỗi đặt hàng:", err);
@@ -418,7 +501,7 @@ navigate("/orders", { replace: true });
                 active={paymentMethod === "BANK_TRANSFER"}
                 icon="🏦"
                 title="Chuyển khoản Ngân hàng"
-                onClick={() => setPaymentMethod("BANK_TRANSFER")}
+                onClick={() => handleChangePaymentMethod("BANK_TRANSFER")}
               />
 
               <PaymentOption
@@ -431,13 +514,13 @@ navigate("/orders", { replace: true });
     />
   }
   title="Thanh toán MoMo"
-  onClick={() => setPaymentMethod("MOMO")}
+  onClick={() => handleChangePaymentMethod("MOMO")}
 />
               <PaymentOption
                 active={paymentMethod === "COD"}
                 icon="🚚"
                 title="Thanh toán khi nhận hàng"
-                onClick={() => setPaymentMethod("COD")}
+                onClick={() => handleChangePaymentMethod("COD")}
               />
             </div>
           </section>

@@ -232,3 +232,7 @@ export const paymentApi = {
   createMomoPayment: (payload) =>
     axiosClient.post("/payments/momo/create", payload),
 };
+// ─── AI CHATBOX ───────────────────────────────────────────────────────────────
+export const aiApi = {
+  chat: (message) => axiosClient.post("/ai/chat", { message }),
+};
