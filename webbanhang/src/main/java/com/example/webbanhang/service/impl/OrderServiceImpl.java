@@ -198,6 +198,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
 
+
     @Override
     @Transactional
     public OrderResponse placeOrder(Integer userId, PlaceOrderRequest request) {
@@ -311,7 +312,56 @@ public class OrderServiceImpl implements OrderService {
 
         return toResponse(order);
     }
+    @Override
+    @Transactional
+    public OrderResponse markMyOrderAsPaid(Integer userId, Integer orderId) {
 
+        log.info("[MOMO] Start update payment: userId={}, orderId={}",
+                userId,
+                orderId
+        );
+
+        Order order = orderRepository.findByIdWithDetails(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order", orderId));
+
+        log.info("[MOMO] Found order: paymentMethod={}, paymentStatus={}, status={}",
+                order.getPaymentMethod(),
+                order.getPaymentStatus(),
+                order.getStatus()
+        );
+
+        if (!order.getUser().getUserId().equals(userId)) {
+            throw new ForbiddenException("Bạn không có quyền cập nhật đơn hàng này");
+        }
+
+        if (!"MOMO".equalsIgnoreCase(order.getPaymentMethod())) {
+            throw new BadRequestException(
+                    "Chỉ đơn hàng MoMo mới được cập nhật thanh toán theo cách này"
+            );
+        }
+
+        if (order.getPaymentStatus() == PaymentStatus.PAID) {
+            return toResponse(order);
+        }
+
+        order.setPaymentStatus(PaymentStatus.PAID);
+
+        if (order.getStatus() == OrderStatus.PENDING) {
+            order.setStatus(OrderStatus.CONFIRMED);
+        }
+
+        order.setUpdatedAt(LocalDateTime.now());
+
+        Order savedOrder = orderRepository.saveAndFlush(order);
+
+        log.info("[MOMO] Updated success: orderId={}, paymentStatus={}, status={}",
+                savedOrder.getOrderId(),
+                savedOrder.getPaymentStatus(),
+                savedOrder.getStatus()
+        );
+
+        return toResponse(savedOrder);
+    }
     @Override
     @Transactional(readOnly = true)
     public PageResponse<OrderSummaryResponse> getMyOrders(Integer userId, Pageable pageable) {

@@ -451,3 +451,65 @@
   .formLayout { grid-template-columns: 1fr; }
   .formSide { order: -1; }
 }
+.imageFileInput {
+  margin-top: 12px;
+  width: 100%;
+  padding: 12px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+  background: #f8fafc;
+  cursor: pointer;
+}
+
+.imagePreviewBox {
+  margin-top: 14px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+}
+
+.imagePreview {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  display: block;
+}
+
+.imagePreviewBox p {
+  padding: 10px 14px;
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
+}
+.imageFileInput {
+  margin-top: 12px;
+  width: 100%;
+  padding: 12px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+  background: #f8fafc;
+  cursor: pointer;
+}
+
+.imagePreviewBox {
+  margin-top: 14px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+}
+
+.imagePreview {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  display: block;
+}
+
+.imagePreviewBox p {
+  padding: 10px 14px;
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
+}

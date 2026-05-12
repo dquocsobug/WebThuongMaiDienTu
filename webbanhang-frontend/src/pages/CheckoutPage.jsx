@@ -350,6 +350,8 @@ if (savedCheckoutState?.pendingOrderId) {
 }
 
 if (paymentMethod === "MOMO") {
+  sessionStorage.setItem("momoOrderId", String(createdOrder.orderId));
+
   sessionStorage.setItem(
     "checkoutState",
     JSON.stringify({
@@ -371,6 +373,9 @@ if (paymentMethod === "MOMO") {
     orderId: createdOrder.orderId,
     amount: Math.round(total),
   });
+
+  console.log("Created orderId:", createdOrder.orderId);
+  console.log("MoMo payUrl:", momoData.payUrl);
 
   window.location.assign(momoData.payUrl);
   return;

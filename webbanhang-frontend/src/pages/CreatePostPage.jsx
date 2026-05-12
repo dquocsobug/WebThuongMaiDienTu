@@ -171,7 +171,12 @@ export default function CreatePostPage() {
 const [checkingPermission, setCheckingPermission] = useState(true);
 const [permissionMessage, setPermissionMessage] = useState("");
 
-  const [form, setForm] = useState({ title: "", summary: "", content: "" });
+  const [form, setForm] = useState({
+  title: "",
+  summary: "",
+  content: "",
+  mainImageUrl: "",
+});
   const [products, setProducts] = useState([]); // [{product, note, displayOrder}]
   const [showProductModal, setShowProductModal] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -302,6 +307,16 @@ const [permissionMessage, setPermissionMessage] = useState("");
     if (errors[name]) setErrors((err) => ({ ...err, [name]: "" }));
   };
 
+  const handleImageFileChange = (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  setForm((prev) => ({
+    ...prev,
+    mainImageUrl: file.name,
+  }));
+};
+
   // Thêm sản phẩm từ modal
   const handleAddProduct = (product) => {
     setProducts((prev) => [
@@ -342,15 +357,26 @@ const [permissionMessage, setPermissionMessage] = useState("");
 
   // Build payload theo đúng structure backend
   const buildPayload = () => ({
-    title: form.title.trim(),
-    summary: form.summary.trim() || undefined,
-    content: form.content.trim(),
-    products: products.map((p) => ({
-      productId: p.product.productId,
-      note: p.note.trim() || undefined,
-      displayOrder: p.displayOrder,
-    })),
-  });
+  title: form.title.trim(),
+  summary: form.summary.trim() || undefined,
+  content: form.content.trim(),
+
+  images: form.mainImageUrl
+    ? [
+        {
+          imageUrl: form.mainImageUrl.trim(),
+          isMain: true,
+          displayOrder: 1,
+        },
+      ]
+    : [],
+
+  products: products.map((p) => ({
+    productId: p.product.productId,
+    note: p.note.trim() || undefined,
+    displayOrder: p.displayOrder,
+  })),
+});
 
   // POST /posts — lưu nháp
   const handleSaveDraft = async () => {
@@ -533,7 +559,39 @@ const [permissionMessage, setPermissionMessage] = useState("");
                 <span className={styles.charCount}>{form.summary.length}/500</span>
               </div>
             </div>
+            <div className={styles.card}>
+  <label className={styles.fieldLabel}>Ảnh bài viết</label>
 
+  <input
+    className={styles.titleInput}
+    type="text"
+    name="mainImageUrl"
+    value={form.mainImageUrl}
+    onChange={handleChange}
+    placeholder="Ví dụ: post-laptop.jpg hoặc https://..."
+  />
+
+  <input
+    type="file"
+    accept="image/*"
+    onChange={handleImageFileChange}
+    className={styles.imageFileInput}
+  />
+
+  {form.mainImageUrl && (
+    <div className={styles.imagePreviewBox}>
+      <img
+        src={imageUrl(form.mainImageUrl)}
+        alt="Ảnh bài viết"
+        className={styles.imagePreview}
+        onError={(e) => {
+          e.currentTarget.src = fallbackImg;
+        }}
+      />
+      <p>{form.mainImageUrl}</p>
+    </div>
+  )}
+</div>
             {/* Nội dung */}
             <div className={styles.card}>
               <label className={styles.fieldLabel}>

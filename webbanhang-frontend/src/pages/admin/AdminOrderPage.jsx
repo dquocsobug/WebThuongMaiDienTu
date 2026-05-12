@@ -312,11 +312,9 @@ export default function AdminOrderPage() {
                     <td>
                       <div className="admin-order-payment">
                         <strong>{order.paymentMethod || "—"}</strong>
-                        <span>
-                          {paymentLabel[order.paymentStatus] ||
-                            order.paymentStatus ||
-                            "—"}
-                        </span>
+                        <span className={`admin-payment-badge ${order.paymentStatus?.toLowerCase()}`}>
+  {paymentLabel[order.paymentStatus] || order.paymentStatus || "—"}
+</span>
                       </div>
                     </td>
 

@@ -43,4 +43,6 @@ public interface OrderService {
 
     /** [ADMIN] Cập nhật trạng thái đơn hàng. */
     OrderResponse updateStatus(Integer orderId, UpdateOrderStatusRequest request);
+
+    OrderResponse markMyOrderAsPaid(Integer userId, Integer orderId);
 }

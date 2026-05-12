@@ -120,6 +120,9 @@ export const orderApi = {
 
   updateStatus: (orderId, payload) =>
     axiosClient.patch(`/orders/${orderId}/status`, payload),
+
+  updatePaymentStatus: (orderId) =>
+  axiosClient.patch(`/orders/my/${orderId}/payment-paid`),
 };
 
 // ─── REVIEWS ──────────────────────────────────────────────────────────────────

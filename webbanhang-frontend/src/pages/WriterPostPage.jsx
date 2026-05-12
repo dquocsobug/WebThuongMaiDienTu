@@ -134,10 +134,11 @@ export default function WriterPostPage() {
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
-    title: "",
-    summary: "",
-    content: "",
-  });
+  title: "",
+  summary: "",
+  content: "",
+  mainImageUrl: "",
+});
 
   const [products, setProducts] = useState([]);
   const [showProductModal, setShowProductModal] = useState(false);
@@ -196,6 +197,16 @@ export default function WriterPostPage() {
     }
   };
 
+  const handleImageFileChange = (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  setForm((prev) => ({
+    ...prev,
+    mainImageUrl: file.name,
+  }));
+};
+
   const handleAddProduct = (product) => {
     setProducts((prev) => [
       ...prev,
@@ -247,15 +258,26 @@ export default function WriterPostPage() {
   };
 
   const buildPayload = () => ({
-    title: form.title.trim(),
-    summary: form.summary.trim() || undefined,
-    content: form.content.trim(),
-    products: products.map((item) => ({
-      productId: item.product.productId,
-      note: item.note.trim() || undefined,
-      displayOrder: item.displayOrder,
-    })),
-  });
+  title: form.title.trim(),
+  summary: form.summary.trim() || undefined,
+  content: form.content.trim(),
+
+  images: form.mainImageUrl
+    ? [
+        {
+          imageUrl: form.mainImageUrl.trim(),
+          isMain: true,
+          displayOrder: 1,
+        },
+      ]
+    : [],
+
+  products: products.map((item) => ({
+    productId: item.product.productId,
+    note: item.note.trim() || undefined,
+    displayOrder: item.displayOrder,
+  })),
+});
 
   const handleSaveDraft = async () => {
     if (!validate()) return;
@@ -415,7 +437,36 @@ export default function WriterPostPage() {
 
             <div className={styles.card}>
               <label className={styles.fieldLabel}>Tóm tắt</label>
+              <div className={styles.card}>
+  <label className={styles.fieldLabel}>Ảnh bài viết</label>
 
+  <input
+    className={styles.titleInput}
+    type="text"
+    name="mainImageUrl"
+    value={form.mainImageUrl}
+    onChange={handleChange}
+    placeholder="Ví dụ: post-laptop.jpg hoặc https://..."
+  />
+
+  <input
+    type="file"
+    accept="image/*"
+    onChange={handleImageFileChange}
+    className={styles.imageFileInput}
+  />
+
+  {form.mainImageUrl && (
+    <div className={styles.imagePreviewBox}>
+      <img
+        src={imageUrl(form.mainImageUrl)}
+        alt="Ảnh bài viết"
+        className={styles.imagePreview}
+      />
+      <p>{form.mainImageUrl}</p>
+    </div>
+  )}
+</div>
               <textarea
                 className={styles.summaryInput}
                 name="summary"

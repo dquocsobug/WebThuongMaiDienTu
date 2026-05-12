@@ -147,7 +147,7 @@ public class VoucherServiceImpl implements VoucherService {
                             .discountPercent(10)
                             .discountAmount(null)
                             .minOrderValue(BigDecimal.ZERO)
-                            .targetRole(user.getRole().name())
+                            .targetRole("CUSTOMER")
                             .quantity(1)
                             .startDate(LocalDateTime.now())
                             .endDate(LocalDateTime.now().plusDays(30))

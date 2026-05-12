@@ -26,8 +26,12 @@ public class PaymentController {
     }
 
     @PostMapping("/momo/ipn")
-    public ResponseEntity<Void> momoIpn(@RequestBody String body) {
+    public ResponseEntity<String> momoIpn(@RequestBody String body) {
+        System.out.println("===== MOMO IPN RECEIVED =====");
+        System.out.println(body);
+
         momoPaymentService.handleIpn(body);
-        return ResponseEntity.noContent().build();
+
+        return ResponseEntity.ok("OK");
     }
 }

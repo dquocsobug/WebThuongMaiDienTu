@@ -395,10 +395,20 @@ public class PostServiceImpl implements PostService {
             throw new BadRequestException("Chỉ có thể duyệt bài viết đang ở trạng thái PENDING");
         }
 
+        User admin = userRepository.findAll()
+                .stream()
+                .filter(u -> u.getRole() == Role.ADMIN)
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("User", "role", "ADMIN"));
+
         if (Boolean.TRUE.equals(request.getApproved())) {
             post.setStatus(PostStatus.APPROVED);
+            post.setApprovedBy(admin);
             post.setApprovedAt(LocalDateTime.now());
             post.setRejectReason(null);
+
+            post.setUpdatedAt(LocalDateTime.now());
+            postRepository.saveAndFlush(post);
 
             voucherService.rewardUserForApprovedPost(
                     post.getCreatedBy().getUserId(),
@@ -411,10 +421,10 @@ public class PostServiceImpl implements PostService {
 
             post.setStatus(PostStatus.REJECTED);
             post.setRejectReason(request.getRejectionReason());
-        }
+            post.setUpdatedAt(LocalDateTime.now());
 
-        post.setUpdatedAt(LocalDateTime.now());
-        postRepository.save(post);
+            postRepository.save(post);
+        }
 
         return toFullResponse(post);
     }

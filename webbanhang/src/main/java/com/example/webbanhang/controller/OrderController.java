@@ -121,4 +121,19 @@ public class OrderController {
         return ResponseEntity.ok(ApiResponse.success("Cập nhật trạng thái đơn hàng thành công",
                 orderService.updateStatus(orderId, request)));
     }
+    @PatchMapping("/my/{orderId}/payment-paid")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<OrderResponse>> markMyOrderAsPaid(
+            @PathVariable Integer orderId
+    ) {
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        "Cập nhật thanh toán thành công",
+                        orderService.markMyOrderAsPaid(
+                                SecurityUtil.getCurrentUserId(),
+                                orderId
+                        )
+                )
+        );
+    }
 }
